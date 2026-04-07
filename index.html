@@ -1,10 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>impulsy-tasks</title>
+    <meta name="theme-color" content="#0D1F3C" />
+    <meta name="description" content="Gestión de tareas para agencias de marketing" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Impulsy Tasks" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Impulsy Tasks</title>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "f400ca5d-c060-4532-baad-3fd16d47aaac",
+          serviceWorkerParam: { scope: "/" },
+        });
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

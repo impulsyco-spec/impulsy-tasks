@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { loginOneSignal, logoutOneSignal } from '../lib/onesignal'
 
 const AuthContext = createContext({})
 
@@ -26,8 +27,13 @@ export function AuthProvider({ children }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
+      if (session?.user) {
+        fetchProfile(session.user.id)
+        loginOneSignal(session.user.id)
+      } else {
+        setProfile(null)
+        logoutOneSignal()
+      }
     })
 
     return () => subscription.unsubscribe()
