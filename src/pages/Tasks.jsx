@@ -150,13 +150,15 @@ export default function Tasks() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
-        <button
-          onClick={() => setShowNewTask(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={15} />
-          Nueva tarea
-        </button>
+        {isOwner && (
+          <button
+            onClick={() => setShowNewTask(true)}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={15} />
+            Nueva tarea
+          </button>
+        )}
       </div>
 
       {/* Filters */}

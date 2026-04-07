@@ -53,12 +53,14 @@ export default function Layout({ children }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const isOwner = profile?.role === 'owner'
+
   const nav = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/transcripts', icon: FileText, label: 'Transcripts' },
+    ...(isOwner ? [{ to: '/transcripts', icon: FileText, label: 'Transcripts' }] : []),
     { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
     { to: '/notifications', icon: Bell, label: 'Notificaciones', badge: unread },
-    ...(profile?.role === 'owner' ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
+    ...(isOwner ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
   ]
 
   const initials = profile?.full_name

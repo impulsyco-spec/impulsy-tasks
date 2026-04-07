@@ -5,7 +5,7 @@ import Logo from '../components/Logo'
 
 export default function Register({ onSwitch }) {
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', orgName: '', orgAction: 'create' })
+  const [form, setForm] = useState({ fullName: '', email: '', password: '' })
   const [orgCode, setOrgCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,27 +28,18 @@ export default function Register({ onSwitch }) {
       if (authError) throw authError
 
       const userId = authData.user.id
-      let orgId
 
-      if (form.orgAction === 'create') {
-        const { data: org, error: orgError } = await supabase
-          .from('organizations')
-          .insert({ name: form.orgName })
-          .select()
-          .single()
-        if (orgError) throw orgError
-        orgId = org.id
-        await supabase.from('profiles').update({ organization_id: orgId, role: 'owner' }).eq('id', userId)
-      } else {
-        const { data: org, error: orgError } = await supabase
-          .from('organizations')
-          .select('id')
-          .eq('id', orgCode.trim())
-          .single()
-        if (orgError) throw new Error('Código de organización inválido')
-        orgId = org.id
-        await supabase.from('profiles').update({ organization_id: orgId, role: 'member' }).eq('id', userId)
-      }
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('id', orgCode.trim())
+        .single()
+      if (orgError) throw new Error('Código de organización inválido')
+
+      await supabase
+        .from('profiles')
+        .update({ organization_id: org.id, role: 'member' })
+        .eq('id', userId)
     } catch (err) {
       setError(err.message)
     }
@@ -63,14 +54,14 @@ export default function Register({ onSwitch }) {
         <Logo size="lg" dark />
         <div>
           <h2 className="text-3xl font-bold text-white leading-snug mb-4">
-            Tu agencia,<br />organizada.
+            Únete a tu equipo.
           </h2>
           <p className="text-slate-400 text-base">
-            Crea tu organización, forma equipos<br />y gestiona tareas de todos tus clientes.
+            Pide el ID de organización a tu manager<br />y empieza a gestionar tus tareas hoy.
           </p>
         </div>
         <div className="space-y-3">
-          {['Extrae tareas de reuniones con IA', 'Aprueba y asigna a tu equipo', 'Notificaciones en tiempo real'].map((item, i) => (
+          {['Recibe tareas asignadas desde reuniones', 'Notificaciones push en tu celular', 'Confirma tareas completadas'].map((item, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-[#00B4D8] flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-bold">{i + 1}</span>
@@ -96,10 +87,10 @@ export default function Register({ onSwitch }) {
           </div>
 
           <h1 className="text-2xl font-bold text-[#0D1F3C] mb-1">
-            {step === 1 ? 'Crear cuenta' : 'Tu organización'}
+            {step === 1 ? 'Crear cuenta' : 'Unirte al equipo'}
           </h1>
           <p className="text-gray-500 text-sm mb-8">
-            {step === 1 ? 'Paso 1 de 2 — Datos personales' : 'Paso 2 de 2 — Configura tu workspace'}
+            {step === 1 ? 'Paso 1 de 2 — Datos personales' : 'Paso 2 de 2 — ID de tu organización'}
           </p>
 
           <form onSubmit={step === 1 ? (e) => { e.preventDefault(); setStep(2) } : handleRegister} className="space-y-4">
@@ -109,7 +100,7 @@ export default function Register({ onSwitch }) {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre completo</label>
                   <input type="text" value={form.fullName} onChange={e => update('fullName', e.target.value)} required
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent bg-white shadow-sm"
-                    placeholder="Santiago Mejía" />
+                    placeholder="Tu nombre" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
@@ -131,32 +122,13 @@ export default function Register({ onSwitch }) {
 
             {step === 2 && (
               <>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => update('orgAction', 'create')}
-                    className={`py-3 rounded-xl text-sm font-semibold border-2 transition-all ${form.orgAction === 'create' ? 'bg-[#0D1F3C] text-white border-[#0D1F3C]' : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white'}`}>
-                    Crear org
-                  </button>
-                  <button type="button" onClick={() => update('orgAction', 'join')}
-                    className={`py-3 rounded-xl text-sm font-semibold border-2 transition-all ${form.orgAction === 'join' ? 'bg-[#0D1F3C] text-white border-[#0D1F3C]' : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white'}`}>
-                    Unirse
-                  </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">ID de la organización</label>
+                  <input type="text" value={orgCode} onChange={e => setOrgCode(e.target.value)} required
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent bg-white shadow-sm font-mono"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                  <p className="text-xs text-gray-400 mt-1.5">Pídelo a tu manager o al owner de la organización</p>
                 </div>
-
-                {form.orgAction === 'create' ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre de la agencia</label>
-                    <input type="text" value={form.orgName} onChange={e => update('orgName', e.target.value)} required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent bg-white shadow-sm"
-                      placeholder="Impulsy Agency" />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">ID de la organización</label>
-                    <input type="text" value={orgCode} onChange={e => setOrgCode(e.target.value)} required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4D8] focus:border-transparent bg-white shadow-sm font-mono"
-                      placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-                  </div>
-                )}
 
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -171,7 +143,7 @@ export default function Register({ onSwitch }) {
                   </button>
                   <button type="submit" disabled={loading}
                     className="flex-1 bg-[#0D1F3C] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#163060] disabled:opacity-50 transition-colors shadow-sm">
-                    {loading ? 'Creando...' : 'Crear cuenta'}
+                    {loading ? 'Uniéndose...' : 'Unirme al equipo'}
                   </button>
                 </div>
               </>
