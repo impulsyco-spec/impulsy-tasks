@@ -45,7 +45,6 @@ export default function Tasks() {
     }
     if (profile.role !== 'owner') {
       taskQuery = taskQuery.eq('assigned_to', profile.id)
-      if (selectedTeamId) taskQuery = taskQuery.eq('team_id', selectedTeamId)
     }
 
     const [{ data: t }, { data: m }] = await Promise.all([

@@ -36,7 +36,6 @@ export default function Dashboard() {
     }
     if (profile.role !== 'owner') {
       query = query.eq('assigned_to', profile.id)
-      if (selectedTeamId) query = query.eq('team_id', selectedTeamId)
     }
     const { data: tasks } = await query.order('created_at', { ascending: false })
 
