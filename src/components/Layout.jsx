@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  KeyRound,
 } from 'lucide-react'
 import Logo from './Logo'
 
@@ -25,6 +26,17 @@ export default function Layout({ children }) {
   const [unread, setUnread] = useState(0)
   const [copied, setCopied] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  async function handleResetPassword() {
+    const email = profile?.id ? (await supabase.auth.getUser()).data.user?.email : null
+    if (!email) return
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/dashboard',
+    })
+    setResetSent(true)
+    setTimeout(() => setResetSent(false), 3000)
+  }
 
   useEffect(() => {
     if (!profile) return
@@ -125,6 +137,11 @@ export default function Layout({ children }) {
               <span>{copied ? 'ID copiado' : 'Copiar ID org'}</span>
             </button>
           )}
+          <button onClick={handleResetPassword}
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-slate-500 hover:bg-white/10 hover:text-slate-300 rounded-lg transition-colors">
+            {resetSent ? <Check size={12} className="text-green-400" /> : <KeyRound size={12} />}
+            <span>{resetSent ? 'Email enviado!' : 'Cambiar contraseña'}</span>
+          </button>
           <div className="flex items-center gap-2.5 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00B4D8] to-[#0D1F3C] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               {initials}
@@ -248,6 +265,11 @@ export default function Layout({ children }) {
                   <span>{copied ? 'ID copiado' : 'Copiar ID org'}</span>
                 </button>
               )}
+              <button onClick={handleResetPassword}
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-400 hover:bg-white/10 hover:text-white rounded-lg transition-colors">
+                {resetSent ? <Check size={14} className="text-green-400" /> : <KeyRound size={14} />}
+                <span>{resetSent ? 'Email enviado!' : 'Cambiar contraseña'}</span>
+              </button>
               <div className="flex items-center gap-3 px-3 py-2">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00B4D8] to-[#0D1F3C] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                   {initials}
