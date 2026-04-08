@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTeam } from '../context/TeamContext'
 import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle } from 'lucide-react'
 
 const STATUS_LABELS = {
@@ -13,6 +14,7 @@ const STATUS_LABELS = {
 
 export default function Dashboard() {
   const { profile } = useAuth()
+  const { selectedTeamId, teams } = useTeam()
   const navigate = useNavigate()
   const [stats, setStats] = useState({ pending: 0, active: 0, overdue: 0, completed: 0 })
   const [myTasks, setMyTasks] = useState([])
@@ -21,15 +23,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (!profile?.organization_id) return
     fetchData()
-  }, [profile])
+  }, [profile, selectedTeamId])
 
   async function fetchData() {
     const today = new Date().toISOString().split('T')[0]
-    const { data: tasks } = await supabase
+    let query = supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', profile.organization_id)
-      .order('created_at', { ascending: false })
+    if (selectedTeamId) query = query.eq('team_id', selectedTeamId)
+    const { data: tasks } = await query.order('created_at', { ascending: false })
 
     if (tasks) {
       setStats({
@@ -53,13 +56,18 @@ export default function Dashboard() {
   const firstName = profile?.full_name?.split(' ')[0]
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches'
+  const activeTeam = teams.find(t => t.id === selectedTeamId)
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">{greeting}, {firstName} 👋</h2>
-        <p className="text-gray-500 mt-1 text-sm">{profile?.organizations?.name} · {new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        <p className="text-gray-500 mt-1 text-sm">
+          {profile?.organizations?.name}
+          {activeTeam ? <span className="text-[#00B4D8] font-medium"> · {activeTeam.name}</span> : ''}
+          {' · '}{new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </p>
       </div>
 
       {/* Stats */}

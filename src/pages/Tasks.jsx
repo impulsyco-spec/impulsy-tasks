@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTeam } from '../context/TeamContext'
 import { Check, X, Edit2, ChevronDown, User, Calendar, Plus } from 'lucide-react'
 
 const STATUS_CONFIG = {
@@ -13,6 +14,7 @@ const STATUS_CONFIG = {
 
 export default function Tasks() {
   const { profile } = useAuth()
+  const { selectedTeamId, teams } = useTeam()
   const [searchParams, setSearchParams] = useSearchParams()
   const filterParam = searchParams.get('filter') || 'all'
 
@@ -26,19 +28,22 @@ export default function Tasks() {
 
   const isOwner = profile?.role === 'owner'
   const today = new Date().toISOString().split('T')[0]
+  const activeTeam = teams.find(t => t.id === selectedTeamId)
 
   useEffect(() => {
     if (!profile?.organization_id) return
     fetchAll()
-  }, [profile])
+  }, [profile, selectedTeamId])
 
   async function fetchAll() {
+    let taskQuery = supabase
+      .from('tasks')
+      .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+      .eq('organization_id', profile.organization_id)
+    if (selectedTeamId) taskQuery = taskQuery.eq('team_id', selectedTeamId)
+
     const [{ data: t }, { data: m }] = await Promise.all([
-      supabase
-        .from('tasks')
-        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
-        .eq('organization_id', profile.organization_id)
-        .order('created_at', { ascending: false }),
+      taskQuery.order('created_at', { ascending: false }),
       supabase
         .from('profiles')
         .select('id, full_name, role')
@@ -149,7 +154,10 @@ export default function Tasks() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
+          {activeTeam && <p className="text-sm text-[#00B4D8] font-medium mt-0.5">{activeTeam.name}</p>}
+        </div>
         {isOwner && (
           <button
             onClick={() => setShowNewTask(true)}

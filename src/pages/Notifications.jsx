@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTeam } from '../context/TeamContext'
 import { Bell, Check, CheckCheck } from 'lucide-react'
 
 export default function Notifications() {
   const { profile } = useAuth()
+  const { selectedTeamId, teams } = useTeam()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const activeTeam = teams.find(t => t.id === selectedTeamId)
 
   useEffect(() => {
     if (!profile) return
@@ -20,20 +24,31 @@ export default function Notifications() {
         table: 'notifications',
         filter: `user_id=eq.${profile.id}`,
       }, payload => {
-        setNotifications(prev => [payload.new, ...prev])
+        setNotifications(prev => [{ ...payload.new, tasks: null }, ...prev])
       })
       .subscribe()
 
     return () => supabase.removeChannel(channel)
   }, [profile])
 
+  useEffect(() => {
+    if (!profile) return
+    fetchNotifications()
+  }, [selectedTeamId])
+
   async function fetchNotifications() {
     const { data } = await supabase
       .from('notifications')
-      .select('*, tasks(title)')
+      .select('*, tasks(title, team_id)')
       .eq('user_id', profile.id)
       .order('created_at', { ascending: false })
-    setNotifications(data || [])
+
+    const all = data || []
+    const filtered = selectedTeamId
+      ? all.filter(n => !n.tasks || n.tasks.team_id === selectedTeamId)
+      : all
+
+    setNotifications(filtered)
     setLoading(false)
   }
 
@@ -56,7 +71,10 @@ export default function Notifications() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Notificaciones</h2>
-          {unread > 0 && <p className="text-sm text-gray-500 mt-1">{unread} sin leer</p>}
+          {activeTeam
+            ? <p className="text-sm text-[#00B4D8] font-medium mt-0.5">{activeTeam.name}{unread > 0 ? ` · ${unread} sin leer` : ''}</p>
+            : unread > 0 && <p className="text-sm text-gray-500 mt-1">{unread} sin leer</p>
+          }
         </div>
         {unread > 0 && (
           <button

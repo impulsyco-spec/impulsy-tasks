@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTeam } from '../context/TeamContext'
 import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
 import {
@@ -13,11 +14,13 @@ import {
   Users,
   Menu,
   X,
+  ChevronDown,
 } from 'lucide-react'
 import Logo from './Logo'
 
 export default function Layout({ children }) {
   const { profile } = useAuth()
+  const { teams, selectedTeamId, setSelectedTeamId } = useTeam()
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
   const [copied, setCopied] = useState(false)
@@ -74,6 +77,21 @@ export default function Layout({ children }) {
         <div className="px-5 pt-5 pb-4 border-b border-white/10">
           <Logo size="sm" dark />
           <p className="text-slate-500 text-xs mt-2 truncate">{profile?.organizations?.name}</p>
+          {teams.length > 0 && (
+            <div className="mt-3 relative">
+              <select
+                value={selectedTeamId}
+                onChange={e => setSelectedTeamId(e.target.value)}
+                className="w-full appearance-none bg-white/10 text-white text-xs rounded-lg pl-3 pr-7 py-2 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
+              >
+                <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>
+                {teams.map(t => (
+                  <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5">
@@ -171,11 +189,28 @@ export default function Layout({ children }) {
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <div className="relative w-72 bg-[#0D1F3C] flex flex-col h-full ml-auto shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <Logo size="sm" dark />
-              <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
-                <X size={20} />
-              </button>
+            <div className="px-5 py-4 border-b border-white/10">
+              <div className="flex items-center justify-between">
+                <Logo size="sm" dark />
+                <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+              {teams.length > 0 && (
+                <div className="mt-3 relative">
+                  <select
+                    value={selectedTeamId}
+                    onChange={e => setSelectedTeamId(e.target.value)}
+                    className="w-full appearance-none bg-white/10 text-white text-xs rounded-lg pl-3 pr-7 py-2 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
+                  >
+                    <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>
+                    {teams.map(t => (
+                      <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              )}
             </div>
 
             <div className="flex-1 p-3 space-y-0.5 overflow-y-auto">
