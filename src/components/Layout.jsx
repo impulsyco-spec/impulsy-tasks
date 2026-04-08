@@ -84,7 +84,7 @@ export default function Layout({ children }) {
                 onChange={e => setSelectedTeamId(e.target.value)}
                 className="w-full appearance-none bg-white/10 text-white text-xs rounded-lg pl-3 pr-7 py-2 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
               >
-                <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>
+                {isOwner && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
                 {teams.map(t => (
                   <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
                 ))}
@@ -203,7 +203,7 @@ export default function Layout({ children }) {
                     onChange={e => setSelectedTeamId(e.target.value)}
                     className="w-full appearance-none bg-white/10 text-white text-xs rounded-lg pl-3 pr-7 py-2 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
                   >
-                    <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>
+                    {isOwner && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
                     {teams.map(t => (
                       <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
                     ))}

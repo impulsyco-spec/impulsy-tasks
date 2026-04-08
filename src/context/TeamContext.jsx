@@ -17,6 +17,15 @@ export function TeamProvider({ children }) {
     localStorage.setItem('selectedTeamId', id)
   }
 
+  // For members: auto-select first team if none selected or invalid
+  useEffect(() => {
+    if (!profile || profile.role === 'owner' || teams.length === 0) return
+    const validIds = teams.map(t => t.id)
+    if (!selectedTeamId || !validIds.includes(selectedTeamId)) {
+      setSelectedTeamId(teams[0].id)
+    }
+  }, [teams, profile])
+
   useEffect(() => {
     if (!profile?.organization_id) {
       setTeams([])

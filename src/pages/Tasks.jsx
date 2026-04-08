@@ -41,6 +41,7 @@ export default function Tasks() {
       .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
       .eq('organization_id', profile.organization_id)
     if (selectedTeamId) taskQuery = taskQuery.eq('team_id', selectedTeamId)
+    if (profile.role !== 'owner') taskQuery = taskQuery.eq('assigned_to', profile.id)
 
     const [{ data: t }, { data: m }] = await Promise.all([
       taskQuery.order('created_at', { ascending: false }),
