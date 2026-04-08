@@ -8,6 +8,7 @@ import Transcripts from './pages/Transcripts'
 import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
 import Teams from './pages/Teams'
+import Guide from './pages/Guide'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -31,9 +32,16 @@ export default function App() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando...</div>
 
   if (!user) {
-    return showRegister
-      ? <Register onSwitch={() => setShowRegister(false)} />
-      : <Login onSwitch={() => setShowRegister(true)} />
+    return (
+      <Routes>
+        <Route path="/guia" element={<Guide />} />
+        <Route path="*" element={
+          showRegister
+            ? <Register onSwitch={() => setShowRegister(false)} />
+            : <Login onSwitch={() => setShowRegister(true)} />
+        } />
+      </Routes>
+    )
   }
 
   return (
