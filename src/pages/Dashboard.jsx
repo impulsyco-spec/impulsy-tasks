@@ -31,8 +31,13 @@ export default function Dashboard() {
       .from('tasks')
       .select('*')
       .eq('organization_id', profile.organization_id)
-    if (selectedTeamId) query = query.eq('team_id', selectedTeamId)
-    if (profile.role !== 'owner') query = query.eq('assigned_to', profile.id)
+    if (profile.role === 'owner' && selectedTeamId) {
+      query = query.eq('team_id', selectedTeamId)
+    }
+    if (profile.role !== 'owner') {
+      query = query.eq('assigned_to', profile.id)
+      if (selectedTeamId) query = query.eq('team_id', selectedTeamId)
+    }
     const { data: tasks } = await query.order('created_at', { ascending: false })
 
     if (tasks) {
