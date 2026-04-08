@@ -44,7 +44,7 @@ export default function Tasks() {
       taskQuery = taskQuery.eq('team_id', selectedTeamId)
     }
     if (profile.role !== 'owner') {
-      taskQuery = taskQuery.eq('assigned_to', profile.id)
+      taskQuery = taskQuery.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
     }
 
     const [{ data: t }, { data: m }] = await Promise.all([
@@ -148,9 +148,9 @@ export default function Tasks() {
 
   const filters = [
     { id: 'all', label: 'Todas' },
-    { id: 'pending_approval', label: 'Por aprobar' },
+    ...(isOwner ? [{ id: 'pending_approval', label: 'Por aprobar' }] : []),
     { id: 'active', label: 'Activas' },
-    { id: 'mine', label: 'Mis tareas' },
+    ...(isOwner ? [{ id: 'mine', label: 'Mis tareas' }] : []),
     { id: 'completed', label: 'Completadas' },
   ]
 

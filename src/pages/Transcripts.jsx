@@ -94,14 +94,27 @@ export default function Transcripts() {
       status: 'pending_approval',
     }))
 
-    await supabase.from('tasks').insert(toInsert)
+    const { data: insertedTasks } = await supabase.from('tasks').insert(toInsert).select()
 
-    // Notificar al owner
+    // Notificar al owner que hay tareas por aprobar
     await supabase.from('notifications').insert({
       user_id: profile.id,
-      task_id: toInsert[0] ? undefined : undefined,
       message: `${selectedTasks.length} tarea(s) extraídas del transcript "${form.title}" esperan aprobación.`,
     })
+
+    // Notificar a cada member asignado
+    if (insertedTasks) {
+      const memberNotifs = insertedTasks
+        .filter(t => t.assigned_to && t.assigned_to !== profile.id)
+        .map(t => ({
+          user_id: t.assigned_to,
+          task_id: t.id,
+          message: `Se te asignó la tarea "${t.title}". Esperando aprobación.`,
+        }))
+      if (memberNotifs.length > 0) {
+        await supabase.from('notifications').insert(memberNotifs)
+      }
+    }
 
     setSaving(false)
     setExtracted(null)

@@ -35,18 +35,27 @@ export default function Dashboard() {
       query = query.eq('team_id', selectedTeamId)
     }
     if (profile.role !== 'owner') {
-      query = query.eq('assigned_to', profile.id)
+      query = query.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
     }
     const { data: tasks } = await query.order('created_at', { ascending: false })
 
     if (tasks) {
-      setStats({
-        pending: tasks.filter(t => t.status === 'pending_approval').length,
-        active: tasks.filter(t => t.status === 'active').length,
-        overdue: tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length,
-        completed: tasks.filter(t => t.status === 'completed').length,
-      })
-      setMyTasks(tasks.filter(t => t.assigned_to === profile.id && t.status !== 'completed').slice(0, 5))
+      if (profile.role === 'owner') {
+        setStats({
+          pending: tasks.filter(t => t.status === 'pending_approval').length,
+          active: tasks.filter(t => t.status === 'active').length,
+          overdue: tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length,
+          completed: tasks.filter(t => t.status === 'completed').length,
+        })
+      } else {
+        setStats({
+          pending: 0,
+          active: tasks.filter(t => t.status === 'active').length,
+          overdue: tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length,
+          completed: tasks.filter(t => t.status === 'completed').length,
+        })
+      }
+      setMyTasks(tasks.filter(t => t.assigned_to === profile.id && t.status === 'active').slice(0, 5))
     }
     setLoading(false)
   }
@@ -77,13 +86,15 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
-        <StatCard
-          icon={<Clock size={18} />}
-          label="Por aprobar"
-          value={stats.pending}
-          color="yellow"
-          onClick={() => navigate('/tasks?filter=pending_approval')}
-        />
+        {profile?.role === 'owner' && (
+          <StatCard
+            icon={<Clock size={18} />}
+            label="Por aprobar"
+            value={stats.pending}
+            color="yellow"
+            onClick={() => navigate('/tasks?filter=pending_approval')}
+          />
+        )}
         <StatCard
           icon={<CheckSquare size={18} />}
           label="Activas"

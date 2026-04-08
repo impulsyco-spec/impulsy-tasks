@@ -45,7 +45,11 @@ export default function Notifications() {
 
     const all = data || []
     const filtered = selectedTeamId
-      ? all.filter(n => !n.tasks || n.tasks.team_id === selectedTeamId)
+      ? all.filter(n => {
+          if (!n.tasks) return true
+          if (!n.tasks.team_id) return true
+          return n.tasks.team_id === selectedTeamId
+        })
       : all
 
     setNotifications(filtered)
