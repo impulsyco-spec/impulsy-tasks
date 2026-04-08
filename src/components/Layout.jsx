@@ -77,7 +77,7 @@ export default function Layout({ children }) {
         <div className="px-5 pt-5 pb-4 border-b border-white/10">
           <Logo size="sm" dark />
           <p className="text-slate-500 text-xs mt-2 truncate">{profile?.organizations?.name}</p>
-          {teams.length > 0 && (
+          {(isOwner || teams.length > 1) && teams.length > 0 && (
             <div className="mt-3 relative">
               <select
                 value={selectedTeamId}
@@ -91,6 +91,9 @@ export default function Layout({ children }) {
               </select>
               <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
+          )}
+          {!isOwner && teams.length === 1 && (
+            <p className="mt-2 text-[#00B4D8] text-xs font-medium truncate">{teams[0].name}</p>
           )}
         </div>
 
@@ -196,7 +199,7 @@ export default function Layout({ children }) {
                   <X size={20} />
                 </button>
               </div>
-              {teams.length > 0 && (
+              {(isOwner || teams.length > 1) && teams.length > 0 && (
                 <div className="mt-3 relative">
                   <select
                     value={selectedTeamId}
@@ -210,6 +213,9 @@ export default function Layout({ children }) {
                   </select>
                   <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
+              )}
+              {!isOwner && teams.length === 1 && (
+                <p className="mt-2 text-[#00B4D8] text-xs font-medium truncate">{teams[0].name}</p>
               )}
             </div>
 
