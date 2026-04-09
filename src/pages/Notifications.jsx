@@ -39,20 +39,30 @@ export default function Notifications() {
   async function fetchNotifications() {
     const { data } = await supabase
       .from('notifications')
-      .select('*, tasks(title, team_id)')
+      .select('*, tasks(title, team_id, assigned_to)')
       .eq('user_id', profile.id)
       .order('created_at', { ascending: false })
 
-    const all = data || []
-    const filtered = selectedTeamId
-      ? all.filter(n => {
-          if (!n.tasks) return true
-          if (!n.tasks.team_id) return true
-          return n.tasks.team_id === selectedTeamId
-        })
-      : all
+    let result = data || []
 
-    setNotifications(filtered)
+    // Members: solo ver notificaciones de tareas asignadas a ellos
+    if (profile.role !== 'owner') {
+      result = result.filter(n => {
+        if (!n.tasks) return true // notificaciones sin tarea (genéricas)
+        return n.tasks.assigned_to === profile.id
+      })
+    }
+
+    // Filtro por equipo (solo owners)
+    if (profile.role === 'owner' && selectedTeamId) {
+      result = result.filter(n => {
+        if (!n.tasks) return true
+        if (!n.tasks.team_id) return true
+        return n.tasks.team_id === selectedTeamId
+      })
+    }
+
+    setNotifications(result)
     setLoading(false)
   }
 

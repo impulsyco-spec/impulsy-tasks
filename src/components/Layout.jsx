@@ -163,16 +163,14 @@ export default function Layout({ children }) {
         {/* Mobile topbar */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0D1F3C] flex-shrink-0">
           <Logo size="sm" dark />
-          <div className="flex items-center gap-3">
+          <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1 relative">
+            <Menu size={22} />
             {unread > 0 && (
-              <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
-            <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1">
-              <Menu size={22} />
-            </button>
-          </div>
+          </button>
         </header>
 
         {/* Main content */}
