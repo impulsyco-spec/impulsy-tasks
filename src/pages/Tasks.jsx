@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
-import { Check, X, Edit2, ChevronDown, User, Calendar, Plus } from 'lucide-react'
+import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2 } from 'lucide-react'
 
 const STATUS_CONFIG = {
   pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
@@ -57,6 +57,12 @@ export default function Tasks() {
     setTasks(t || [])
     setMembers(m || [])
     setLoading(false)
+  }
+
+  async function deleteTask(taskId) {
+    await supabase.from('notifications').delete().eq('task_id', taskId)
+    await supabase.from('tasks').delete().eq('id', taskId)
+    setTasks(prev => prev.filter(t => t.id !== taskId))
   }
 
   function filtered() {
@@ -269,6 +275,7 @@ export default function Tasks() {
               onApprove={() => updateStatus(task.id, 'active')}
               onReject={() => updateStatus(task.id, 'rejected')}
               onComplete={() => updateStatus(task.id, 'completed')}
+              onDelete={() => deleteTask(task.id)}
               saving={saving}
             />
           ))
@@ -278,7 +285,7 @@ export default function Tasks() {
   )
 }
 
-function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onApprove, onReject, onComplete, saving }) {
+function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onApprove, onReject, onComplete, onDelete, saving }) {
   const isOverdue = task.status === 'active' && task.due_date && task.due_date < today
   const cfg = STATUS_CONFIG[task.status]
 
@@ -406,6 +413,15 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                     <Check size={14} />
                   </button>
                 </>
+              )}
+              {isOwner && (
+                <button
+                  onClick={onDelete}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Eliminar tarea"
+                >
+                  <Trash2 size={14} />
+                </button>
               )}
             </div>
           </div>

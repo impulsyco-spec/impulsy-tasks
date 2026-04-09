@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
-import { Bell, Check, CheckCheck } from 'lucide-react'
+import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react'
 
 export default function Notifications() {
   const { profile } = useAuth()
@@ -76,6 +76,18 @@ export default function Notifications() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
+  async function deleteNotif(id) {
+    await supabase.from('notifications').delete().eq('id', id)
+    setNotifications(prev => prev.filter(n => n.id !== id))
+  }
+
+  async function deleteAll() {
+    const ids = notifications.map(n => n.id)
+    if (ids.length === 0) return
+    await supabase.from('notifications').delete().in('id', ids)
+    setNotifications([])
+  }
+
   const unread = notifications.filter(n => !n.read).length
 
   if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
@@ -90,15 +102,26 @@ export default function Notifications() {
             : unread > 0 && <p className="text-sm text-gray-500 mt-1">{unread} sin leer</p>
           }
         </div>
-        {unread > 0 && (
-          <button
-            onClick={markAllRead}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-          >
-            <CheckCheck size={14} />
-            Marcar todas como leídas
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {unread > 0 && (
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
+            >
+              <CheckCheck size={14} />
+              Marcar leídas
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={deleteAll}
+              className="flex items-center gap-2 text-sm text-red-500 hover:underline"
+            >
+              <Trash2 size={14} />
+              Eliminar todas
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200">
@@ -121,15 +144,24 @@ export default function Notifications() {
                     {new Date(notif.created_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}
                   </p>
                 </div>
-                {!notif.read && (
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {!notif.read && (
+                    <button
+                      onClick={() => markRead(notif.id)}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                      title="Marcar como leída"
+                    >
+                      <Check size={14} />
+                    </button>
+                  )}
                   <button
-                    onClick={() => markRead(notif.id)}
-                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                    title="Marcar como leída"
+                    onClick={() => deleteNotif(notif.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Eliminar"
                   >
-                    <Check size={14} />
+                    <Trash2 size={14} />
                   </button>
-                )}
+                </div>
               </div>
             ))}
           </div>
