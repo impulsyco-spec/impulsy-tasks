@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
-import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2 } from 'lucide-react'
+import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag } from 'lucide-react'
 
 const STATUS_CONFIG = {
   pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
@@ -11,6 +11,14 @@ const STATUS_CONFIG = {
   completed: { label: 'Completada', color: 'bg-green-100 text-green-700 border-green-200' },
   rejected: { label: 'Rechazada', color: 'bg-red-100 text-red-700 border-red-200' },
 }
+
+const PRIORITY_CONFIG = {
+  alta: { label: 'Alta', color: 'bg-red-100 text-red-700 border-red-200' },
+  media: { label: 'Media', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+  baja: { label: 'Baja', color: 'bg-gray-100 text-gray-600 border-gray-200' },
+}
+
+const CATEGORIES = ['Contenido', 'Anuncios', 'Programacion', 'Diseno', 'Estrategia', 'Redes Sociales', 'Email Marketing', 'SEO', 'Otro']
 
 export default function Tasks() {
   const { profile } = useAuth()
@@ -23,7 +31,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true)
   const [editingTask, setEditingTask] = useState(null)
   const [showNewTask, setShowNewTask] = useState(false)
-  const [newTask, setNewTask] = useState({ title: '', description: '', due_date: '', assigned_to: '' })
+  const [newTask, setNewTask] = useState({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
   const [saving, setSaving] = useState(false)
 
   const isOwner = profile?.role === 'owner'
@@ -143,11 +151,13 @@ export default function Tasks() {
       description: newTask.description,
       due_date: newTask.due_date || null,
       assigned_to: newTask.assigned_to || null,
+      priority: newTask.priority,
+      category: newTask.category || null,
       status: 'pending_approval',
     }).select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
 
     if (data) setTasks(prev => [data, ...prev])
-    setNewTask({ title: '', description: '', due_date: '', assigned_to: '' })
+    setNewTask({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
     setShowNewTask(false)
     setSaving(false)
   }
@@ -165,9 +175,18 @@ export default function Tasks() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
-          {activeTeam && <p className="text-sm text-[#00B4D8] font-medium mt-0.5">{activeTeam.name}</p>}
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm">
+            {activeTeam?.logo_url ? (
+              <img src={activeTeam.logo_url} alt={activeTeam.name} className="w-full h-full object-contain" />
+            ) : (
+              <Users size={24} className="text-gray-300" />
+            )}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
+            {activeTeam && <p className="text-sm text-[#00B4D8] font-medium mt-0.5">{activeTeam.name}</p>}
+          </div>
         </div>
         {isOwner && (
           <button
@@ -217,8 +236,8 @@ export default function Tasks() {
               rows={2}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="block text-xs text-gray-500 mb-1">Fecha de vencimiento</label>
                 <input
                   type="date"
@@ -227,7 +246,7 @@ export default function Tasks() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div className="flex-1">
+              <div>
                 <label className="block text-xs text-gray-500 mb-1">Asignar a</label>
                 <select
                   value={newTask.assigned_to}
@@ -237,6 +256,33 @@ export default function Tasks() {
                   <option value="">Sin asignar</option>
                   {members.map(m => (
                     <option key={m.id} value={m.id}>{m.full_name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Prioridad</label>
+                <select
+                  value={newTask.priority}
+                  onChange={e => setNewTask(f => ({ ...f, priority: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baja">Baja</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Categoria</label>
+                <select
+                  value={newTask.category}
+                  onChange={e => setNewTask(f => ({ ...f, category: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Sin categoria</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
@@ -328,6 +374,31 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
               </select>
             </div>
           </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500">Prioridad</label>
+              <select
+                value={editing.priority || 'media'}
+                onChange={e => onEditChange({ priority: e.target.value })}
+                className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 mt-1"
+              >
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-500">Categoria</label>
+              <select
+                value={editing.category || ''}
+                onChange={e => onEditChange({ category: e.target.value })}
+                className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 mt-1"
+              >
+                <option value="">Sin categoria</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
           <div className="flex gap-2">
             <button onClick={onCancelEdit} className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-600 hover:bg-gray-50 transition-colors">
               Cancelar
@@ -343,11 +414,16 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold text-gray-900">{task.title}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${cfg.color}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${cfg.color}`}>
                   {cfg.label}
                 </span>
+                {task.priority && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${PRIORITY_CONFIG[task.priority]?.color}`}>
+                    Prio: {PRIORITY_CONFIG[task.priority]?.label}
+                  </span>
+                )}
                 {isOverdue && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 font-medium">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 font-bold uppercase tracking-wider">
                     Vencida
                   </span>
                 )}
@@ -366,6 +442,12 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                   <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-500' : ''}`}>
                     <Calendar size={11} />
                     {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es-CO')}
+                  </span>
+                )}
+                {task.category && (
+                  <span className="flex items-center gap-1">
+                    <Tag size={11} />
+                    {task.category}
                   </span>
                 )}
               </div>

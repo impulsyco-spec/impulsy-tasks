@@ -11,9 +11,9 @@ export default function Transcripts() {
   const [transcripts, setTranscripts] = useState([])
   const [teams, setTeams] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title: '', content: '', team_id: '' })
+  const [form, setForm] = useState({ title: '', content: '', team_id: '', meeting_date: new Date().toISOString().split('T')[0] })
   const [extracting, setExtracting] = useState(false)
-  const [extracted, setExtracted] = useState(null) // tareas extraídas para revisar
+  const [extracted, setExtracted] = useState(null)
   const [saving, setSaving] = useState(false)
   const [currentTranscriptId, setCurrentTranscriptId] = useState(null)
   const [error, setError] = useState('')
@@ -32,19 +32,24 @@ export default function Transcripts() {
     setTeams(data || [])
   }
 
-  // Miembros del equipo seleccionado (o todos si no hay equipo)
-  function teamMembers() {
-    if (!form.team_id) return []
-    const team = teams.find(t => t.id === form.team_id)
-    return team?.team_members?.map(m => m.profiles).filter(Boolean) || []
-  }
-
   async function fetchTranscripts() {
-    const { data } = await supabase
+    let query = supabase
       .from('transcripts')
-      .select('*, profiles(full_name)')
+      .select('*, profiles(full_name), tasks(id, title, status, assigned_to, profiles!tasks_assigned_to_fkey(full_name))')
       .eq('organization_id', profile.organization_id)
-      .order('created_at', { ascending: false })
+
+    // Si no es owner, filtrar por los equipos a los que pertenece
+    if (profile.role !== 'owner') {
+      const { data: memberTeams } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('profile_id', profile.id)
+      
+      const teamIds = memberTeams?.map(mt => mt.team_id) || []
+      query = query.in('team_id', teamIds)
+    }
+
+    const { data } = await query.order('meeting_date', { ascending: false })
     setTranscripts(data || [])
   }
 
@@ -53,7 +58,6 @@ export default function Transcripts() {
     setExtracting(true)
     setError('')
     try {
-      // Guardar transcript primero
       const { data: transcript, error: tErr } = await supabase
         .from('transcripts')
         .insert({
@@ -63,13 +67,13 @@ export default function Transcripts() {
           content: form.content,
           source: 'manual',
           team_id: form.team_id || null,
+          meeting_date: form.meeting_date,
         })
         .select()
         .single()
       if (tErr) throw tErr
       setCurrentTranscriptId(transcript.id)
 
-      // Extraer tareas con Claude
       const result = await extractTasksFromTranscript(form.content)
       setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '' })))
       fetchTranscripts()
@@ -96,13 +100,6 @@ export default function Transcripts() {
 
     const { data: insertedTasks } = await supabase.from('tasks').insert(toInsert).select()
 
-    // Notificar al owner que hay tareas por aprobar
-    await supabase.from('notifications').insert({
-      user_id: profile.id,
-      message: `${selectedTasks.length} tarea(s) extraídas del transcript "${form.title}" esperan aprobación.`,
-    })
-
-    // Notificar a cada member asignado
     if (insertedTasks) {
       const memberNotifs = insertedTasks
         .filter(t => t.assigned_to && t.assigned_to !== profile.id)
@@ -119,14 +116,20 @@ export default function Transcripts() {
     setSaving(false)
     setExtracted(null)
     setShowForm(false)
-    setForm({ title: '', content: '', team_id: '' })
+    setForm({ title: '', content: '', team_id: '', meeting_date: new Date().toISOString().split('T')[0] })
+    fetchTranscripts() // Refrescar para ver las tareas vinculadas
     navigate('/tasks?filter=pending_approval')
   }
 
+  // ... (toggleTask and updateTask functions kept the same)
+  function teamMembers() {
+    if (!form.team_id) return []
+    const team = teams.find(t => t.id === form.team_id)
+    return team?.team_members?.map(m => m.profiles).filter(Boolean) || []
+  }
   function toggleTask(idx) {
     setExtracted(prev => prev.map((t, i) => i === idx ? { ...t, selected: !t.selected } : t))
   }
-
   function updateTask(idx, field, value) {
     setExtracted(prev => prev.map((t, i) => i === idx ? { ...t, [field]: value } : t))
   }
@@ -152,8 +155,8 @@ export default function Transcripts() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <h3 className="font-semibold text-gray-900 mb-4">Subir transcript</h3>
           <form onSubmit={handleExtract} className="space-y-4">
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="md:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Título de la reunión</label>
                 <input
                   type="text"
@@ -161,10 +164,20 @@ export default function Transcripts() {
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   required
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Reunión semanal Impulsy - 7 abril"
+                  placeholder="Ej: Reunión semanal"
                 />
               </div>
-              <div className="w-44">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de reunión</label>
+                <input
+                  type="date"
+                  value={form.meeting_date}
+                  onChange={e => setForm(f => ({ ...f, meeting_date: e.target.value }))}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
                 <select
                   value={form.team_id}
@@ -211,67 +224,37 @@ export default function Transcripts() {
         </div>
       )}
 
-      {/* Extracted tasks review */}
+      {/* Extracted tasks review (kept mostly same) */}
       {extracted && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold text-gray-900">Tareas identificadas</h3>
-              <p className="text-sm text-gray-500 mt-0.5">Revisa, edita y selecciona las tareas a crear</p>
+              <p className="text-sm text-gray-500 mt-0.5">Revisa y selecciona las tareas a crear</p>
             </div>
-            <span className="text-sm text-gray-500">{extracted.filter(t => t.selected).length} de {extracted.length} seleccionadas</span>
+            <span className="text-sm text-gray-500">{extracted.filter(t => t.selected).length} seleccionadas</span>
           </div>
 
           <div className="space-y-3 mb-6">
             {extracted.map((task, idx) => (
-              <div
-                key={idx}
-                className={`border rounded-lg p-4 transition-colors ${task.selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}
-              >
+              <div key={idx} className={`border rounded-lg p-4 transition-colors ${task.selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
                 <div className="flex items-start gap-3">
-                  <button
-                    onClick={() => toggleTask(idx)}
-                    className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'}`}
-                  >
+                  <button onClick={() => toggleTask(idx)} className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'}`}>
                     {task.selected && <Check size={12} className="text-white" />}
                   </button>
                   <div className="flex-1 space-y-2">
-                    <input
-                      type="text"
-                      value={task.title}
-                      onChange={e => updateTask(idx, 'title', e.target.value)}
-                      className="w-full text-sm font-medium bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-0"
-                    />
-                    <textarea
-                      value={task.description}
-                      onChange={e => updateTask(idx, 'description', e.target.value)}
-                      rows={2}
-                      className="w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none resize-none py-0"
-                    />
+                    <input type="text" value={task.title} onChange={e => updateTask(idx, 'title', e.target.value)} className="w-full text-sm font-medium bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-0" />
+                    <textarea value={task.description} onChange={e => updateTask(idx, 'description', e.target.value)} rows={2} className="w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none resize-none py-0" />
                     <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">Vence:</span>
-                        <input
-                          type="date"
-                          value={task.due_date || ''}
-                          onChange={e => updateTask(idx, 'due_date', e.target.value)}
-                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none"
-                        />
+                        <input type="date" value={task.due_date || ''} onChange={e => updateTask(idx, 'due_date', e.target.value)} className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none" />
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">Asignar a:</span>
-                        {task.assigned_name && (
-                          <span className="text-xs text-blue-500 font-medium">{task.assigned_name} →</span>
-                        )}
-                        <select
-                          value={task.assigned_to || ''}
-                          onChange={e => updateTask(idx, 'assigned_to', e.target.value)}
-                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer"
-                        >
+                        <select value={task.assigned_to || ''} onChange={e => updateTask(idx, 'assigned_to', e.target.value)} className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer">
                           <option value="">Sin asignar</option>
-                          {teamMembers().map(m => (
-                            <option key={m.id} value={m.id}>{m.full_name}</option>
-                          ))}
+                          {teamMembers().map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                         </select>
                       </div>
                     </div>
@@ -282,19 +265,10 @@ export default function Transcripts() {
           </div>
 
           <div className="flex gap-3">
-            <button
-              onClick={() => { setExtracted(null); setShowForm(false) }}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              Descartar
-            </button>
-            <button
-              onClick={handleSaveTasks}
-              disabled={saving || extracted.filter(t => t.selected).length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
+            <button onClick={() => { setExtracted(null); setShowForm(false) }} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">Descartar</button>
+            <button onClick={handleSaveTasks} disabled={saving || extracted.filter(t => t.selected).length === 0} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
               <Check size={14} />
-              {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} tareas a aprobación`}
+              {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} tareas`}
             </button>
           </div>
         </div>
@@ -303,23 +277,52 @@ export default function Transcripts() {
       {/* Transcripts list */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Historial</h3>
+          <h3 className="font-semibold text-gray-900">Historial de Reuniones</h3>
         </div>
         {transcripts.length === 0 ? (
           <div className="p-8 text-center text-gray-400">
             <FileText size={32} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No hay transcripts aún</p>
+            <p className="text-sm">No hay reuniones registradas</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {transcripts.map(t => (
-              <div key={t.id} className="flex items-center gap-4 px-6 py-3">
-                <FileText size={16} className="text-gray-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {t.profiles?.full_name} · {new Date(t.created_at).toLocaleDateString('es-CO')}
-                  </p>
+              <div key={t.id} className="p-6 hover:bg-gray-50 transition-colors group">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                        <FileText size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{t.title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {new Date(t.meeting_date + 'T00:00:00').toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} · Por {t.profiles?.full_name}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Tareas asociadas */}
+                    {t.tasks && t.tasks.length > 0 && (
+                      <div className="mt-4 pl-11 space-y-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tareas generadas ({t.tasks.length})</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {t.tasks.map(task => (
+                            <div key={task.id} className="flex items-center gap-2 bg-white border border-gray-100 rounded-lg px-2 py-1.5 shadow-sm overflow-hidden">
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${task.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                              <span className="text-xs text-gray-700 truncate flex-1">{task.title}</span>
+                              {task.profiles?.full_name && (
+                                <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                  {task.profiles.full_name.split(' ')[0]}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <ChevronRight size={16} className="text-gray-300 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             ))}

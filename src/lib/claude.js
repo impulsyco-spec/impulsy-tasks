@@ -20,7 +20,9 @@ Devuelve ÚNICAMENTE un JSON válido con este formato, sin texto adicional:
       "title": "Título corto de la tarea",
       "description": "Descripción detallada de la tarea",
       "due_date": "YYYY-MM-DD o null si no se menciona fecha",
-      "assigned_name": "Nombre de la persona responsable mencionada en el transcript, o null si no se menciona"
+      "assigned_name": "Nombre de la persona responsable mencionada en el transcript, o null si no se menciona",
+      "priority": "alta, media o baja (inferir segun urgencia)",
+      "category": "Marketing, Ventas, Diseño, Desarrollo, Legal, Operaciones o null"
     }
   ]
 }

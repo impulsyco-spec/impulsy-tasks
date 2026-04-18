@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generar iconos Impulsy Tasks</title></head>
+<body style="padding:40px;font-family:sans-serif;background:#f5f5f5">
+  <h1>Generador de iconos - Impulsy Tasks</h1>
+  <p>Haz clic en cada boton para descargar el icono.</p>
+  <div style="display:flex;gap:30px;margin-top:20px">
+    <div>
+      <canvas id="c512" width="512" height="512" style="border:1px solid #ccc;border-radius:12px"></canvas>
+      <br><button onclick="download('c512','icon-512.png')" style="margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer">Descargar 512x512</button>
+    </div>
+    <div>
+      <canvas id="c192" width="192" height="192" style="border:1px solid #ccc;border-radius:8px"></canvas>
+      <br><button onclick="download('c192','icon-192.png')" style="margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer">Descargar 192x192</button>
+    </div>
+    <div>
+      <canvas id="c180" width="180" height="180" style="border:1px solid #ccc;border-radius:8px"></canvas>
+      <br><button onclick="download('c180','apple-touch-icon.png')" style="margin-top:10px;padding:10px 20px;font-size:16px;cursor:pointer">Descargar Apple Touch 180x180</button>
+    </div>
+  </div>
+
+  <script>
+    function drawIcon(canvasId, size) {
+      const c = document.getElementById(canvasId)
+      const ctx = c.getContext('2d')
+      const s = size
+
+      // Background navy
+      ctx.fillStyle = '#0D1F3C'
+      ctx.fillRect(0, 0, s, s)
+
+      // "I" letter stylized as logo mark
+      const centerX = s / 2
+      const centerY = s * 0.38
+
+      // Draw a subtle glow circle behind
+      const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, s * 0.22)
+      grad.addColorStop(0, 'rgba(0, 180, 216, 0.15)')
+      grad.addColorStop(1, 'rgba(0, 180, 216, 0)')
+      ctx.fillStyle = grad
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, s * 0.22, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Checkmark icon (represents tasks)
+      const checkSize = s * 0.18
+      const checkX = centerX
+      const checkY = centerY
+
+      ctx.strokeStyle = '#00B4D8'
+      ctx.lineWidth = s * 0.035
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+
+      // Rounded square
+      const boxSize = s * 0.22
+      const boxR = s * 0.04
+      const bx = checkX - boxSize / 2
+      const by = checkY - boxSize / 2
+
+      ctx.beginPath()
+      ctx.moveTo(bx + boxR, by)
+      ctx.lineTo(bx + boxSize - boxR, by)
+      ctx.quadraticCurveTo(bx + boxSize, by, bx + boxSize, by + boxR)
+      ctx.lineTo(bx + boxSize, by + boxSize - boxR)
+      ctx.quadraticCurveTo(bx + boxSize, by + boxSize, bx + boxSize - boxR, by + boxSize)
+      ctx.lineTo(bx + boxR, by + boxSize)
+      ctx.quadraticCurveTo(bx, by + boxSize, bx, by + boxSize - boxR)
+      ctx.lineTo(bx, by + boxR)
+      ctx.quadraticCurveTo(bx, by, bx + boxR, by)
+      ctx.closePath()
+      ctx.stroke()
+
+      // Checkmark inside
+      ctx.beginPath()
+      ctx.moveTo(checkX - boxSize * 0.25, checkY + boxSize * 0.02)
+      ctx.lineTo(checkX - boxSize * 0.05, checkY + boxSize * 0.22)
+      ctx.lineTo(checkX + boxSize * 0.28, checkY - boxSize * 0.18)
+      ctx.stroke()
+
+      // "IMPULSY" text
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.font = `bold ${s * 0.085}px -apple-system, "Helvetica Neue", Arial, sans-serif`
+      ctx.letterSpacing = `${s * 0.01}px`
+      ctx.fillText('IMPULSY', centerX, s * 0.56)
+
+      // "TASKS" text in cyan
+      ctx.fillStyle = '#00B4D8'
+      ctx.font = `bold ${s * 0.065}px -apple-system, "Helvetica Neue", Arial, sans-serif`
+      ctx.fillText('TASKS', centerX, s * 0.66)
+    }
+
+    drawIcon('c512', 512)
+    drawIcon('c192', 192)
+    drawIcon('c180', 180)
+
+    function download(canvasId, filename) {
+      const c = document.getElementById(canvasId)
+      const link = document.createElement('a')
+      link.download = filename
+      link.href = c.toDataURL('image/png')
+      link.click()
+    }
+  </script>
+</body>
+</html>

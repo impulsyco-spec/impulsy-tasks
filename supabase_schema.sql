@@ -22,21 +22,44 @@ create table transcripts (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid references organizations(id) on delete cascade,
   created_by uuid references profiles(id),
+  team_id uuid references teams(id) on delete set null,
   title text not null,
   content text not null,
   source text check (source in ('manual', 'fathom')) default 'manual',
+  meeting_date date default current_date,
   created_at timestamptz default now()
 );
 
--- 4. Tareas
+-- 4. Equipos
+create table teams (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid references organizations(id) on delete cascade,
+  name text not null,
+  logo_url text,
+  created_at timestamptz default now()
+);
+
+-- 5. Miembros de equipo
+create table team_members (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid references teams(id) on delete cascade,
+  profile_id uuid references profiles(id) on delete cascade,
+  created_at timestamptz default now(),
+  unique(team_id, profile_id)
+);
+
+-- 6. Tareas
 create table tasks (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid references organizations(id) on delete cascade,
   transcript_id uuid references transcripts(id) on delete set null,
+  team_id uuid references teams(id) on delete set null,
   created_by uuid references profiles(id),
   assigned_to uuid references profiles(id),
   title text not null,
   description text,
+  priority text check (priority in ('alta', 'media', 'baja')) default 'media',
+  category text,
   status text check (status in ('pending_approval', 'active', 'completed', 'rejected')) default 'pending_approval',
   due_date date,
   created_at timestamptz default now(),
