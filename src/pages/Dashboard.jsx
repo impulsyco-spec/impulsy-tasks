@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
-import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle } from 'lucide-react'
+import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle, FileText } from 'lucide-react'
 
 const STATUS_LABELS = {
   pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700' },
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ pending: 0, active: 0, overdue: 0, completed: 0 })
   const [myTasks, setMyTasks] = useState([])
+  const [recentTranscripts, setRecentTranscripts] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -55,7 +56,29 @@ export default function Dashboard() {
           completed: tasks.filter(t => t.status === 'completed').length,
         })
       }
-      setMyTasks(tasks.filter(t => t.assigned_to === profile.id && t.status === 'active').slice(0, 5))
+      setMyTasks(tasks.filter(t => t.assigned_to === profile.id && t.status === 'active').sort((a,b) => {
+        if(a.priority === 'alta' && b.priority !== 'alta') return -1
+        if(a.priority !== 'alta' && b.priority === 'alta') return 1
+        return 0
+      }).slice(0, 5))
+
+      // Fetch recent transcripts
+      let tQuery = supabase
+        .from('transcripts')
+        .select('id, title, meeting_date, team_id')
+        .eq('organization_id', profile.organization_id)
+      
+      if (profile.role !== 'owner') {
+        const { data: memberTeams } = await supabase
+          .from('team_members')
+          .select('team_id')
+          .eq('profile_id', profile.id)
+        const teamIds = memberTeams?.map(mt => mt.team_id) || []
+        tQuery = tQuery.or(`team_id.in.(${teamIds.join(',')}),created_by.eq.${profile.id}`)
+      }
+      
+      const { data: transcripts } = await tQuery.order('meeting_date', { ascending: false }).limit(3)
+      setRecentTranscripts(transcripts || [])
     }
     setLoading(false)
   }
@@ -140,25 +163,33 @@ export default function Dashboard() {
               <p className="text-xs text-gray-400 mt-1">No tienes tareas pendientes</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 text-[13px]">
               {myTasks.map(task => {
                 const isOverdue = task.status === 'active' && task.due_date && task.due_date < new Date().toISOString().split('T')[0]
                 return (
                   <div
                     key={task.id}
                     onClick={() => navigate('/tasks')}
-                    className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   >
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOverdue ? 'bg-red-400' : 'bg-blue-400'}`} />
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOverdue ? 'bg-red-400' : task.priority === 'alta' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-blue-400'}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{task.title}</p>
-                      {task.due_date && (
-                        <p className={`text-xs mt-0.5 ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>
-                          {isOverdue ? 'Vencida · ' : 'Vence '}{new Date(task.due_date + 'T00:00:00').toLocaleDateString('es-CO')}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <p className={`font-semibold text-gray-900 truncate ${task.priority === 'alta' ? 'text-red-900' : ''}`}>{task.title}</p>
+                        {task.priority === 'alta' && <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ring-1 ring-red-200">Alta</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        {task.due_date && (
+                          <p className={`text-[11px] ${isOverdue ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                            {isOverdue ? 'Vencida · ' : 'Vence '}{new Date(task.due_date + 'T00:00:00').toLocaleDateString('es-CO')}
+                          </p>
+                        )}
+                        {task.category && (
+                          <span className="text-[10px] text-gray-300">· {task.category}</span>
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${STATUS_LABELS[task.status]?.color}`}>
+                    <span className={`text-[10px] px-3 py-1 rounded-full font-bold flex-shrink-0 uppercase tracking-wide border ${STATUS_LABELS[task.status]?.color} border-current/10`}>
                       {STATUS_LABELS[task.status]?.label}
                     </span>
                   </div>
@@ -168,8 +199,33 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Acciones rápidas */}
-        <div className="space-y-3">
+        {/* Reuniones Recientes & Acciones rápidas */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 text-sm">Reuniones recientes</h3>
+              <button onClick={() => navigate('/transcripts')} className="text-[10px] text-blue-600 font-medium">Ver todas</button>
+            </div>
+            {recentTranscripts.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-4">No hay reuniones aún</p>
+            ) : (
+              <div className="space-y-3">
+                {recentTranscripts.map(rt => (
+                  <div key={rt.id} onClick={() => navigate('/transcripts')} className="flex items-center gap-3 cursor-pointer group">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                      <FileText size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900 truncate">{rt.title}</p>
+                      <p className="text-[10px] text-gray-400">{new Date(rt.meeting_date + 'T00:00:00').toLocaleDateString('es-CO')}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
           {profile?.role === 'owner' && (
             <>
               <h3 className="font-semibold text-gray-900 text-sm px-1">Acciones rápidas</h3>

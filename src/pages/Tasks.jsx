@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
-import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag } from 'lucide-react'
+import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag, FileText, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const STATUS_CONFIG = {
   pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
@@ -13,14 +14,15 @@ const STATUS_CONFIG = {
 }
 
 const PRIORITY_CONFIG = {
-  alta: { label: 'Alta', color: 'bg-red-100 text-red-700 border-red-200' },
-  media: { label: 'Media', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  baja: { label: 'Baja', color: 'bg-gray-100 text-gray-600 border-gray-200' },
+  alta: { label: 'Alta', color: 'bg-red-50 text-red-700 border-red-100 shadow-sm shadow-red-100/50' },
+  media: { label: 'Media', color: 'bg-yellow-50 text-yellow-700 border-yellow-100 shadow-sm shadow-yellow-100/50' },
+  baja: { label: 'Baja', color: 'bg-slate-50 text-slate-600 border-slate-100' },
 }
 
 const CATEGORIES = ['Contenido', 'Anuncios', 'Programacion', 'Diseno', 'Estrategia', 'Redes Sociales', 'Email Marketing', 'SEO', 'Otro']
 
 export default function Tasks() {
+  const navigate = useNavigate()
   const { profile } = useAuth()
   const { selectedTeamId, teams } = useTeam()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -46,7 +48,7 @@ export default function Tasks() {
   async function fetchAll() {
     let taskQuery = supabase
       .from('tasks')
-      .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+      .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), transcripts(meeting_date)')
       .eq('organization_id', profile.organization_id)
     if (profile.role === 'owner' && selectedTeamId) {
       taskQuery = taskQuery.eq('team_id', selectedTeamId)
@@ -450,6 +452,23 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                     {task.category}
                   </span>
                 )}
+                {task.transcript_id && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => navigate('/transcripts')}
+                      className="flex items-center gap-1 text-blue-500 hover:text-blue-700 transition-colors"
+                    >
+                      <FileText size={11} />
+                      Ver origen
+                    </button>
+                    {task.transcripts?.meeting_date && (
+                      <span className="flex items-center gap-1 text-slate-400">
+                        <Calendar size={11} />
+                        Reunión: {new Date(task.transcripts.meeting_date + 'T00:00:00').toLocaleDateString('es-CO')}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -480,13 +499,11 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                   </button>
                 </>
               )}
-              {task.status === 'active' && (
+              {task.status === 'active' && isOwner && (
                 <>
-                  {isOwner && (
-                    <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                      <Edit2 size={14} />
-                    </button>
-                  )}
+                  <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                    <Edit2 size={14} />
+                  </button>
                   <button
                     onClick={onComplete}
                     className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"

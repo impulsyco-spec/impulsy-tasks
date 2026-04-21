@@ -5,12 +5,14 @@ import { Users, Plus, X, ChevronDown } from 'lucide-react'
 
 export default function Teams() {
   const { profile } = useAuth()
+  const isOwner = profile?.role === 'owner'
   const [teams, setTeams] = useState([])
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [newTeam, setNewTeam] = useState({ name: '', logo_url: '' })
   const [creating, setCreating] = useState(false)
   const [expandedTeam, setExpandedTeam] = useState(null)
+  const [editingLogo, setEditingLogo] = useState(null)
 
   useEffect(() => {
     if (!profile?.organization_id) return
@@ -84,8 +86,18 @@ export default function Teams() {
 
   if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
 
+  if (!isOwner) return (
+    <div className="p-8 text-center">
+      <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <X size={32} />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">Acceso restringido</h2>
+      <p className="text-gray-500">Solo los administradores pueden gestionar equipos.</p>
+    </div>
+  )
+
   return (
-    <div className="p-8">
+    <div className="p-4 lg:p-8 max-w-5xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Equipos</h2>
       </div>
@@ -162,16 +174,49 @@ export default function Teams() {
                 {isExpanded && (
                   <div className="border-t border-gray-100 px-5 py-4 space-y-4">
                     {/* Editar Logo */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Actualizar URL del Logo</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          defaultValue={team.logo_url || ''}
-                          onBlur={e => updateTeamLogo(team.id, e.target.value)}
-                          placeholder="Pega la URL del nuevo logo..."
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+                          {team.logo_url ? (
+                            <img src={team.logo_url} alt={team.name} className="w-full h-full object-contain p-2" />
+                          ) : (
+                            <Users size={24} className="text-gray-300" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Logo del equipo</label>
+                          {editingLogo === team.id ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                autoFocus
+                                defaultValue={team.logo_url || ''}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    updateTeamLogo(team.id, e.target.value)
+                                    setEditingLogo(null)
+                                  }
+                                  if (e.key === 'Escape') setEditingLogo(null)
+                                }}
+                                placeholder="https://ejemplo.com/logo.png"
+                                className="flex-1 border border-blue-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              />
+                              <button
+                                onClick={() => setEditingLogo(null)}
+                                className="px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditingLogo(team.id)}
+                              className="text-xs text-blue-600 font-semibold hover:text-blue-700 flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition-all"
+                            >
+                              {team.logo_url ? 'Cambiar logo' : 'Agregar logo'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 

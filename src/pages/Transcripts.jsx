@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 export default function Transcripts() {
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const isOwner = profile?.role === 'owner'
   const [transcripts, setTranscripts] = useState([])
   const [teams, setTeams] = useState([])
   const [showForm, setShowForm] = useState(false)
@@ -38,7 +39,7 @@ export default function Transcripts() {
       .select('*, profiles(full_name), tasks(id, title, status, assigned_to, profiles!tasks_assigned_to_fkey(full_name))')
       .eq('organization_id', profile.organization_id)
 
-    // Si no es owner, filtrar por los equipos a los que pertenece
+    // Si no es owner, filtrar por los equipos a los que pertenece o si él lo creó
     if (profile.role !== 'owner') {
       const { data: memberTeams } = await supabase
         .from('team_members')
@@ -46,7 +47,11 @@ export default function Transcripts() {
         .eq('profile_id', profile.id)
       
       const teamIds = memberTeams?.map(mt => mt.team_id) || []
-      query = query.in('team_id', teamIds)
+      const filterOr = teamIds.length > 0 
+        ? `team_id.in.(${teamIds.join(',')}),created_by.eq.${profile.id}`
+        : `created_by.eq.${profile.id}`
+      
+      query = query.or(filterOr)
     }
 
     const { data } = await query.order('meeting_date', { ascending: false })
@@ -75,7 +80,7 @@ export default function Transcripts() {
       setCurrentTranscriptId(transcript.id)
 
       const result = await extractTasksFromTranscript(form.content)
-      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '' })))
+      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '', priority: 'media', category: '' })))
       fetchTranscripts()
     } catch (err) {
       setError(err.message)
@@ -95,6 +100,8 @@ export default function Transcripts() {
       due_date: t.due_date || null,
       assigned_to: t.assigned_to || null,
       team_id: form.team_id || null,
+      priority: t.priority || 'media',
+      category: t.category || null,
       status: 'pending_approval',
     }))
 
@@ -141,13 +148,15 @@ export default function Transcripts() {
           <h2 className="text-2xl font-bold text-gray-900">Transcripts</h2>
           <p className="text-gray-500 mt-1">Sube reuniones y extrae tareas con IA</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setExtracted(null) }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <Sparkles size={15} />
-          Nuevo transcript
-        </button>
+        {isOwner && (
+          <button
+            onClick={() => { setShowForm(true); setExtracted(null) }}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Sparkles size={15} />
+            Nuevo transcript
+          </button>
+        )}
       </div>
 
       {/* Form */}
@@ -227,32 +236,105 @@ export default function Transcripts() {
       {/* Extracted tasks review (kept mostly same) */}
       {extracted && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="flex-1">
               <h3 className="font-semibold text-gray-900">Tareas identificadas</h3>
               <p className="text-sm text-gray-500 mt-0.5">Revisa y selecciona las tareas a crear</p>
             </div>
-            <span className="text-sm text-gray-500">{extracted.filter(t => t.selected).length} seleccionadas</span>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha Reunión:</span>
+                {isOwner ? (
+                  <input
+                    type="date"
+                    value={form.meeting_date}
+                    onChange={async e => {
+                      const newDate = e.target.value
+                      setForm(f => ({ ...f, meeting_date: newDate }))
+                      if (currentTranscriptId) {
+                        await supabase.from('transcripts').update({ meeting_date: newDate }).eq('id', currentTranscriptId)
+                      }
+                    }}
+                    className="text-sm font-medium bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                ) : (
+                  <span className="text-sm font-medium text-gray-700">{new Date(form.meeting_date + 'T00:00:00').toLocaleDateString('es-CO')}</span>
+                )}
+              </div>
+              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{extracted.filter(t => t.selected).length} seleccionadas</span>
+            </div>
           </div>
 
           <div className="space-y-3 mb-6">
             {extracted.map((task, idx) => (
               <div key={idx} className={`border rounded-lg p-4 transition-colors ${task.selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
                 <div className="flex items-start gap-3">
-                  <button onClick={() => toggleTask(idx)} className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'}`}>
+                  <button onClick={() => isOwner && toggleTask(idx)} className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'} ${!isOwner ? 'cursor-default' : ''}`}>
                     {task.selected && <Check size={12} className="text-white" />}
                   </button>
                   <div className="flex-1 space-y-2">
-                    <input type="text" value={task.title} onChange={e => updateTask(idx, 'title', e.target.value)} className="w-full text-sm font-medium bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-0" />
-                    <textarea value={task.description} onChange={e => updateTask(idx, 'description', e.target.value)} rows={2} className="w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none resize-none py-0" />
+                    <input 
+                      type="text" 
+                      value={task.title} 
+                      onChange={e => isOwner && updateTask(idx, 'title', e.target.value)} 
+                      readOnly={!isOwner}
+                      className={`w-full text-sm font-medium bg-transparent border-0 border-b border-transparent ${isOwner ? 'hover:border-gray-300 focus:border-blue-500' : ''} focus:outline-none py-0`} 
+                    />
+                    <textarea 
+                      value={task.description} 
+                      onChange={e => isOwner && updateTask(idx, 'description', e.target.value)} 
+                      readOnly={!isOwner}
+                      rows={2} 
+                      className={`w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent ${isOwner ? 'hover:border-gray-300 focus:border-blue-500' : ''} focus:outline-none resize-none py-0`} 
+                    />
                     <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">Vence:</span>
-                        <input type="date" value={task.due_date || ''} onChange={e => updateTask(idx, 'due_date', e.target.value)} className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none" />
+                        <input 
+                          type="date" 
+                          value={task.due_date || ''} 
+                          onChange={e => isOwner && updateTask(idx, 'due_date', e.target.value)} 
+                          readOnly={!isOwner}
+                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none" 
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Prioridad:</span>
+                        <select 
+                          value={task.priority || 'media'} 
+                          onChange={e => isOwner && updateTask(idx, 'priority', e.target.value)} 
+                          disabled={!isOwner}
+                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
+                        >
+                          <option value="alta">Alta</option>
+                          <option value="media">Media</option>
+                          <option value="baja">Baja</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Categoría:</span>
+                        <select 
+                          value={task.category || ''} 
+                          onChange={e => isOwner && updateTask(idx, 'category', e.target.value)} 
+                          disabled={!isOwner}
+                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
+                        >
+                          <option value="">Sin categ.</option>
+                          <option value="Contenido">Contenido</option>
+                          <option value="Anuncios">Anuncios</option>
+                          <option value="Programacion">Prog.</option>
+                          <option value="Diseno">Diseño</option>
+                          <option value="Estrategia">Estrategia</option>
+                        </select>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">Asignar a:</span>
-                        <select value={task.assigned_to || ''} onChange={e => updateTask(idx, 'assigned_to', e.target.value)} className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer">
+                        <select 
+                          value={task.assigned_to || ''} 
+                          onChange={e => isOwner && updateTask(idx, 'assigned_to', e.target.value)} 
+                          disabled={!isOwner}
+                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
+                        >
                           <option value="">Sin asignar</option>
                           {teamMembers().map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
                         </select>
@@ -265,11 +347,15 @@ export default function Transcripts() {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => { setExtracted(null); setShowForm(false) }} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">Descartar</button>
-            <button onClick={handleSaveTasks} disabled={saving || extracted.filter(t => t.selected).length === 0} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-              <Check size={14} />
-              {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} tareas`}
+            <button onClick={() => { setExtracted(null); setShowForm(false) }} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              {isOwner ? 'Descartar' : 'Cerrar'}
             </button>
+            {isOwner && (
+              <button onClick={handleSaveTasks} disabled={saving || extracted.filter(t => t.selected).length === 0} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                <Check size={14} />
+                {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} tareas`}
+              </button>
+            )}
           </div>
         </div>
       )}

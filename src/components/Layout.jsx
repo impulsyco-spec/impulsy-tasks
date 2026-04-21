@@ -72,7 +72,7 @@ export default function Layout({ children }) {
 
   const nav = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    ...(isOwner ? [{ to: '/transcripts', icon: FileText, label: 'Transcripts' }] : []),
+    { to: '/transcripts', icon: FileText, label: 'Transcripts' },
     { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
     { to: '/notifications', icon: Bell, label: 'Notificaciones', badge: unread },
     ...(isOwner ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
@@ -90,22 +90,40 @@ export default function Layout({ children }) {
           <Logo size="sm" dark />
           <p className="text-slate-500 text-xs mt-2 truncate">{profile?.organizations?.name}</p>
           {(isOwner || teams.length > 1) && teams.length > 0 && (
-            <div className="mt-3 relative">
-              <select
-                value={selectedTeamId}
-                onChange={e => setSelectedTeamId(e.target.value)}
-                className="w-full appearance-none bg-white/10 text-white text-xs rounded-lg pl-3 pr-7 py-2 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
-              >
-                {isOwner && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
-                {teams.map(t => (
-                  <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
-                ))}
-              </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <div className="mt-3 relative flex items-center gap-2">
+              {selectedTeamId && teams.find(t => t.id === selectedTeamId)?.logo_url && (
+                <div className="w-6 h-6 rounded bg-white flex-shrink-0 overflow-hidden border border-white/20">
+                  <img 
+                    src={teams.find(t => t.id === selectedTeamId).logo_url} 
+                    alt="Team Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              <div className="relative flex-1">
+                <select
+                  value={selectedTeamId}
+                  onChange={e => setSelectedTeamId(e.target.value)}
+                  className="w-full appearance-none bg-white/10 text-white text-[11px] rounded-lg pl-2 pr-6 py-1.5 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
+                >
+                  {isOwner && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
+                  {teams.map(t => (
+                    <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           )}
           {!isOwner && teams.length === 1 && (
-            <p className="mt-2 text-[#00B4D8] text-xs font-medium truncate">{teams[0].name}</p>
+            <div className="mt-2 flex items-center gap-2">
+              {teams[0].logo_url && (
+                <div className="w-5 h-5 rounded bg-white overflow-hidden border border-white/20">
+                  <img src={teams[0].logo_url} alt="Team Logo" className="w-full h-full object-contain" />
+                </div>
+              )}
+              <p className="text-[#00B4D8] text-xs font-medium truncate">{teams[0].name}</p>
+            </div>
           )}
         </div>
 
