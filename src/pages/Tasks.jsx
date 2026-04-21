@@ -175,28 +175,29 @@ export default function Tasks() {
   if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm">
+    <div className="p-4 lg:p-8 max-w-5xl">
+      <div className="flex items-center justify-between mb-6 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
             {activeTeam?.logo_url ? (
               <img src={activeTeam.logo_url} alt={activeTeam.name} className="w-full h-full object-contain" />
             ) : (
-              <Users size={24} className="text-gray-300" />
+              <Users size={20} className="text-gray-300" />
             )}
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
-            {activeTeam && <p className="text-sm text-[#00B4D8] font-medium mt-0.5">{activeTeam.name}</p>}
+          <div className="min-w-0">
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Tareas</h2>
+            {activeTeam && <p className="text-sm text-[#00B4D8] font-medium mt-0.5 truncate">{activeTeam.name}</p>}
           </div>
         </div>
         {isOwner && (
           <button
             onClick={() => setShowNewTask(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 lg:px-4 rounded-lg text-xs lg:text-sm font-medium hover:bg-blue-700 transition-colors flex-shrink-0"
           >
-            <Plus size={15} />
-            Nueva tarea
+            <Plus size={14} />
+            <span className="hidden sm:inline">Nueva tarea</span>
+            <span className="sm:hidden">Nueva</span>
           </button>
         )}
       </div>
@@ -325,6 +326,7 @@ export default function Tasks() {
               onComplete={() => updateStatus(task.id, 'completed')}
               onDelete={() => deleteTask(task.id)}
               saving={saving}
+              navigate={navigate}
             />
           ))
         )}
@@ -333,12 +335,12 @@ export default function Tasks() {
   )
 }
 
-function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onApprove, onReject, onComplete, onDelete, saving }) {
+function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onApprove, onReject, onComplete, onDelete, saving, navigate }) {
   const isOverdue = task.status === 'active' && task.due_date && task.due_date < today
   const cfg = STATUS_CONFIG[task.status]
 
   return (
-    <div className={`bg-white rounded-xl border p-5 transition-shadow hover:shadow-sm ${isOverdue ? 'border-red-200' : 'border-gray-200'}`}>
+    <div className={`bg-white rounded-xl border p-4 lg:p-5 transition-shadow hover:shadow-sm ${isOverdue ? 'border-red-200' : 'border-gray-200'}`}>
       {editing ? (
         <div className="space-y-3">
           <input
@@ -412,7 +414,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
         </div>
       ) : (
         <div>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold text-gray-900">{task.title}</h3>
@@ -433,7 +435,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
               {task.description && (
                 <p className="text-sm text-gray-500 mt-1">{task.description}</p>
               )}
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-400">
                 {task.assigned_profile && (
                   <span className="flex items-center gap-1">
                     <User size={11} />
@@ -473,7 +475,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-0.5 flex-shrink-0">
               {isOwner && task.status === 'pending_approval' && (
                 <>
                   <button
