@@ -46,28 +46,60 @@ export default function Tasks() {
   }, [profile, selectedTeamId])
 
   async function fetchAll() {
-    let taskQuery = supabase
-      .from('tasks')
-      .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), transcripts(meeting_date)')
-      .eq('organization_id', profile.organization_id)
-    if (profile.role === 'owner' && selectedTeamId) {
-      taskQuery = taskQuery.eq('team_id', selectedTeamId)
-    }
-    if (profile.role !== 'owner') {
-      taskQuery = taskQuery.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
-    }
+    try {
+      let taskQuery = supabase
+        .from('tasks')
+        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+        .eq('organization_id', profile.organization_id)
+      if (profile.role === 'owner' && selectedTeamId) {
+        taskQuery = taskQuery.eq('team_id', selectedTeamId)
+      }
+      if (profile.role !== 'owner') {
+        taskQuery = taskQuery.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
+      }
 
-    const [{ data: t }, { data: m }] = await Promise.all([
-      taskQuery.order('created_at', { ascending: false }),
-      supabase
-        .from('profiles')
-        .select('id, full_name, role')
-        .eq('organization_id', profile.organization_id),
-    ])
-    setTasks(t || [])
-    setMembers(m || [])
-    setLoading(false)
+      const [taskResult, memberResult] = await Promise.all([
+        taskQuery.order('created_at', { ascending: false }),
+        supabase
+          .from('profiles')
+          .select('id, full_name, role')
+          .eq('organization_id', profile.organization_id),
+      ])
+
+      // Fetch transcript meeting dates separately (resilient — column may not exist yet)
+      const tasks = taskResult.data || []
+      const transcriptIds = [...new Set(tasks.filter(t => t.transcript_id).map(t => t.transcript_id))]
+      let transcriptMap = {}
+      if (transcriptIds.length > 0) {
+        try {
+          const { data: transcripts } = await supabase
+            .from('transcripts')
+            .select('id, meeting_date')
+            .in('id', transcriptIds)
+          if (transcripts) {
+            transcripts.forEach(tr => { transcriptMap[tr.id] = tr })
+          }
+        } catch (_) {
+          // meeting_date column may not exist yet in schema — degrade gracefully
+        }
+      }
+
+      const enrichedTasks = tasks.map(t => ({
+        ...t,
+        transcripts: t.transcript_id ? (transcriptMap[t.transcript_id] || null) : null,
+      }))
+
+      setTasks(enrichedTasks)
+      setMembers(memberResult.data || [])
+    } catch (err) {
+      console.error('Error fetching tasks:', err)
+      setTasks([])
+      setMembers([])
+    } finally {
+      setLoading(false)
+    }
   }
+
 
   async function deleteTask(taskId) {
     await supabase.from('notifications').delete().eq('task_id', taskId)
