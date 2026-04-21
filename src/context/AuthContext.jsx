@@ -10,13 +10,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*, organizations(*)')
-      .eq('id', userId)
-      .single()
-    setProfile(data)
-    setLoading(false)  // Set loading false only after profile is ready
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*, organizations(*)')
+        .eq('id', userId)
+        .single()
+      setProfile(data)
+    } catch (err) {
+      console.error('Error loading profile:', err)
+    } finally {
+      setLoading(false)  // Always release loading, even if fetch fails
+    }
   }
 
   useEffect(() => {
