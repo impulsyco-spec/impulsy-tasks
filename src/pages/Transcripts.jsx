@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { extractTasksFromTranscript } from '../lib/claude'
-import { FileText, Sparkles, ChevronRight, X, Check, Edit2 } from 'lucide-react'
+import { FileText, Sparkles, ChevronRight, X, Check, Edit2, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Transcripts() {
@@ -139,6 +139,22 @@ export default function Transcripts() {
     setForm({ title: '', content: '', team_id: '', meeting_date: new Date().toISOString().split('T')[0] })
     fetchTranscripts() // Refrescar para ver las tareas vinculadas
     navigate('/tasks?filter=pending_approval')
+  }
+
+  async function handleDeleteTranscript(e, id) {
+    e.stopPropagation()
+    if (!confirm('¿Estás seguro de eliminar este historial de reunión? Las tareas generadas se mantendrán, pero perderán su referencia a la reunión original.')) return
+
+    try {
+      // 1. Remove reference in tasks to avoid foreign key errors if cascade is not enabled
+      await supabase.from('tasks').update({ transcript_id: null }).eq('transcript_id', id)
+      // 2. Delete transcript
+      await supabase.from('transcripts').delete().eq('id', id)
+      setTranscripts(prev => prev.filter(t => t.id !== id))
+    } catch (err) {
+      console.error('Error al eliminar:', err)
+      alert('Hubo un error al eliminar el historial.')
+    }
   }
 
   // ... (toggleTask and updateTask functions kept the same)
@@ -460,7 +476,18 @@ export default function Transcripts() {
                       </div>
                     )}
                   </div>
-                  <ChevronRight size={16} className="text-gray-300 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {isOwner && (
+                      <button
+                        onClick={(e) => handleDeleteTranscript(e, t.id)}
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar historial"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                    <ChevronRight size={16} className="text-gray-300" />
+                  </div>
                 </div>
               </div>
             ))}
