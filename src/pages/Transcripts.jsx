@@ -11,6 +11,9 @@ export default function Transcripts() {
   const isOwner = profile?.role === 'owner'
   const [transcripts, setTranscripts] = useState([])
   const [teams, setTeams] = useState([])
+  const [allMembers, setAllMembers] = useState([])
+  const [memberSearch, setMemberSearch] = useState({})
+  const [showMemberDropdown, setShowMemberDropdown] = useState({})
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', content: '', team_id: '', meeting_date: new Date().toISOString().split('T')[0] })
   const [extracting, setExtracting] = useState(false)
@@ -31,6 +34,12 @@ export default function Transcripts() {
       .select('id, name, team_members(profile_id, profiles(id, full_name))')
       .eq('organization_id', profile.organization_id)
     setTeams(data || [])
+    // Also fetch all org members for the assignee search
+    const { data: members } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('organization_id', profile.organization_id)
+    setAllMembers(members || [])
   }
 
   async function fetchTranscripts() {
@@ -134,10 +143,11 @@ export default function Transcripts() {
 
   // ... (toggleTask and updateTask functions kept the same)
   function teamMembers() {
-    if (!form.team_id) return []
+    if (!form.team_id) return allMembers  // If no team selected, show all org members
     const team = teams.find(t => t.id === form.team_id)
     return team?.team_members?.map(m => m.profiles).filter(Boolean) || []
   }
+
   function toggleTask(idx) {
     setExtracted(prev => prev.map((t, i) => i === idx ? { ...t, selected: !t.selected } : t))
   }
@@ -296,10 +306,10 @@ export default function Transcripts() {
                         <span className="text-xs text-gray-500">Vence:</span>
                         <input 
                           type="date" 
-                          value={task.due_date || ''} 
+                          value={task.due_date}
                           onChange={e => isOwner && updateTask(idx, 'due_date', e.target.value)} 
                           readOnly={!isOwner}
-                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none" 
+                          className="text-xs text-gray-600 bg-white border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400" 
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -331,17 +341,55 @@ export default function Transcripts() {
                           <option value="Estrategia">Estrategia</option>
                         </select>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Asignar a:</span>
-                        <select 
-                          value={task.assigned_to || ''} 
-                          onChange={e => isOwner && updateTask(idx, 'assigned_to', e.target.value)} 
-                          disabled={!isOwner}
-                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
-                        >
-                          <option value="">Sin asignar</option>
-                          {teamMembers().map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
-                        </select>
+                      <div className="flex items-center gap-2 relative">
+                        <span className="text-xs text-gray-500">Asignar:</span>
+                        {isOwner ? (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Buscar miembro..."
+                              value={memberSearch[idx] !== undefined ? memberSearch[idx] : (teamMembers().find(m => m.id === task.assigned_to)?.full_name || '')}
+                              onFocus={() => setShowMemberDropdown(prev => ({ ...prev, [idx]: true }))}
+                              onChange={e => {
+                                setMemberSearch(prev => ({ ...prev, [idx]: e.target.value }))
+                                setShowMemberDropdown(prev => ({ ...prev, [idx]: true }))
+                                if (e.target.value === '') updateTask(idx, 'assigned_to', '')
+                              }}
+                              onBlur={() => setTimeout(() => setShowMemberDropdown(prev => ({ ...prev, [idx]: false })), 150)}
+                              className="text-xs text-gray-700 bg-white border border-gray-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400 w-36"
+                            />
+                            {showMemberDropdown[idx] && (
+                              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[160px] max-h-36 overflow-y-auto">
+                                <button
+                                  className="w-full text-left text-xs px-3 py-2 text-gray-400 hover:bg-gray-50"
+                                  onMouseDown={() => { updateTask(idx, 'assigned_to', ''); setMemberSearch(prev => ({ ...prev, [idx]: '' })) }}
+                                >
+                                  Sin asignar
+                                </button>
+                                {teamMembers()
+                                  .filter(m => !memberSearch[idx] || m.full_name?.toLowerCase().includes(memberSearch[idx].toLowerCase()))
+                                  .map(m => (
+                                    <button
+                                      key={m.id}
+                                      className="w-full text-left text-xs px-3 py-2 hover:bg-blue-50 text-gray-700 font-medium"
+                                      onMouseDown={() => {
+                                        updateTask(idx, 'assigned_to', m.id)
+                                        setMemberSearch(prev => ({ ...prev, [idx]: m.full_name }))
+                                        setShowMemberDropdown(prev => ({ ...prev, [idx]: false }))
+                                      }}
+                                    >
+                                      {m.full_name}
+                                    </button>
+                                  ))
+                                }
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-600">
+                            {teamMembers().find(m => m.id === task.assigned_to)?.full_name || 'Sin asignar'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
