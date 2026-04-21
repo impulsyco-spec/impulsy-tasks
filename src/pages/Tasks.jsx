@@ -38,12 +38,15 @@ export default function Tasks() {
 
   const isOwner = profile?.role === 'owner'
   const today = new Date().toISOString().split('T')[0]
-  const activeTeam = teams.find(t => t.id === selectedTeamId)
+  const activeTeam = Array.isArray(teams) ? teams.find(t => t.id === selectedTeamId) : undefined
 
   useEffect(() => {
-    if (!profile?.organization_id) return
+    if (!profile?.organization_id) {
+      // Profile not ready yet — keep loading until it is
+      return
+    }
     fetchAll()
-  }, [profile, selectedTeamId])
+  }, [profile?.organization_id, selectedTeamId])
 
   async function fetchAll() {
     try {
@@ -204,7 +207,12 @@ export default function Tasks() {
     { id: 'completed', label: 'Completadas' },
   ]
 
-  if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
+  if (loading) return (
+    <div className="p-8 flex flex-col items-center justify-center min-h-[300px] gap-3 text-gray-400">
+      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm">Cargando tareas...</p>
+    </div>
+  )
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl">

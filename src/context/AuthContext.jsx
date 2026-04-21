@@ -16,13 +16,17 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
+    setLoading(false)  // Set loading false only after profile is ready
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      setLoading(false)
+      if (session?.user) {
+        fetchProfile(session.user.id)  // setLoading(false) will be called inside fetchProfile
+      } else {
+        setLoading(false)  // No user, no profile fetch needed
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
