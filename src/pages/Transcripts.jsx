@@ -80,7 +80,11 @@ export default function Transcripts() {
       setCurrentTranscriptId(transcript.id)
 
       const result = await extractTasksFromTranscript(form.content)
-      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '', priority: 'media', category: '' })))
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const defaultDueDate = tomorrow.toISOString().split('T')[0]
+      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '', priority: 'media', category: '', due_date: t.due_date || defaultDueDate })))
+
       fetchTranscripts()
     } catch (err) {
       setError(err.message)
