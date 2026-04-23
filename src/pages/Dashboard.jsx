@@ -98,13 +98,24 @@ export default function Dashboard() {
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">{greeting}, {firstName} 👋</h2>
-        <p className="text-gray-500 mt-1 text-sm">
-          {profile?.organizations?.name}
-          {activeTeam ? <span className="text-[#00B4D8] font-medium"> · {activeTeam.name}</span> : ''}
-          {' · '}{new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
+      <div className="flex items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+            {activeTeam?.logo_url || profile?.organizations?.logo_url ? (
+              <img src={activeTeam?.logo_url || profile?.organizations?.logo_url} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Sparkles size={24} className="text-blue-500" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+              {greeting}, {firstName} 👋
+            </h1>
+            <p className="text-gray-500 text-sm lg:text-base truncate">
+              {activeTeam ? activeTeam.name : profile?.organizations?.name || 'Impulsy Tasks'}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}

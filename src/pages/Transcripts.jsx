@@ -92,7 +92,7 @@ export default function Transcripts() {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const defaultDueDate = tomorrow.toISOString().split('T')[0]
-      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '', priority: 'media', category: '', due_date: t.due_date || defaultDueDate })))
+      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '', priority: t.priority || 'media', category: t.category || '', resources: t.resources || [], due_date: t.due_date || defaultDueDate })))
 
       fetchTranscripts()
     } catch (err) {
@@ -115,6 +115,7 @@ export default function Transcripts() {
       team_id: form.team_id || null,
       priority: t.priority || 'media',
       category: t.category || null,
+      resources: t.resources || [],
       status: 'pending_approval',
     }))
 
@@ -169,6 +170,23 @@ export default function Transcripts() {
   }
   function updateTask(idx, field, value) {
     setExtracted(prev => prev.map((t, i) => i === idx ? { ...t, [field]: value } : t))
+  }
+
+  function addNewTask() {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const defaultDueDate = tomorrow.toISOString().split('T')[0]
+    const newTask = {
+      title: '✨ Nueva tarea manual',
+      description: '',
+      selected: true,
+      assigned_to: '',
+      priority: 'media',
+      category: '',
+      resources: [],
+      due_date: defaultDueDate
+    }
+    setExtracted(prev => [...(prev || []), newTask])
   }
 
   return (
@@ -268,8 +286,10 @@ export default function Transcripts() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">Tareas identificadas</h3>
-              <p className="text-sm text-gray-500 mt-0.5">Revisa y selecciona las tareas a crear</p>
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                Tareas identificadas <Sparkles size={16} className="text-blue-500" />
+              </h3>
+              <p className="text-sm text-gray-500 mt-0.5">Revisa, edita o agrega tareas nuevas</p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
@@ -292,6 +312,15 @@ export default function Transcripts() {
                 )}
               </div>
               <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{extracted.filter(t => t.selected).length} seleccionadas</span>
+              {isOwner && (
+                <button
+                  onClick={addNewTask}
+                  className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors shadow-sm"
+                >
+                  <Plus size={14} />
+                  Agregar tarea
+                </button>
+              )}
             </div>
           </div>
 
@@ -407,7 +436,46 @@ export default function Transcripts() {
                           </span>
                         )}
                       </div>
-                    </div>
+                    {/* Resources */}
+                    {task.selected && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recursos / Links</span>
+                          {isOwner && (
+                            <button 
+                              onClick={() => {
+                                const url = prompt('Introduce la URL del recurso:')
+                                if (url) {
+                                  const name = prompt('Nombre del recurso:', 'Link')
+                                  updateTask(idx, 'resources', [...(task.resources || []), { name, url }])
+                                }
+                              }}
+                              className="text-[10px] text-blue-600 font-bold hover:underline"
+                            >
+                              + Agregar Link
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(task.resources || []).map((res, ridx) => (
+                            <div key={ridx} className="flex items-center gap-1.5 bg-white border border-gray-200 rounded px-2 py-1 shadow-sm">
+                              <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]">{res.name}: {res.url}</span>
+                              {isOwner && (
+                                <button 
+                                  onClick={() => updateTask(idx, 'resources', task.resources.filter((_, i) => i !== ridx))}
+                                  className="text-gray-400 hover:text-red-500"
+                                >
+                                  <X size={10} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {(!task.resources || task.resources.length === 0) && (
+                            <span className="text-[10px] text-gray-400 italic">No hay recursos adjuntos</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

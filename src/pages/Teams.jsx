@@ -152,7 +152,7 @@ export default function Teams() {
                 >
                   <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {team.logo_url ? (
-                      <img src={team.logo_url} alt={team.name} className="w-full h-full object-contain" />
+                      <img src={(team.logo_url.startsWith('http') || team.logo_url.startsWith('/') ? team.logo_url : '/logos/' + team.logo_url) + '?t=' + Date.now()} alt={team.name} className="w-full h-full object-contain" />
                     ) : (
                       <Users size={18} className="text-gray-400" />
                     )}
@@ -178,7 +178,7 @@ export default function Teams() {
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                           {team.logo_url ? (
-                            <img src={team.logo_url} alt={team.name} className="w-full h-full object-contain p-2" />
+                            <img src={(team.logo_url.startsWith('http') || team.logo_url.startsWith('/') ? team.logo_url : '/logos/' + team.logo_url) + '?t=' + Date.now()} alt={team.name} className="w-full h-full object-contain p-2" />
                           ) : (
                             <Users size={24} className="text-gray-300" />
                           )}
@@ -190,15 +190,19 @@ export default function Teams() {
                               <input
                                 type="text"
                                 autoFocus
-                                defaultValue={team.logo_url || ''}
+                                defaultValue={team.logo_url ? team.logo_url.replace(/^\/logos\//, '') : ''}
                                 onKeyDown={e => {
                                   if (e.key === 'Enter') {
-                                    updateTeamLogo(team.id, e.target.value)
+                                    let newVal = e.target.value.trim()
+                                    if (newVal && !newVal.startsWith('http') && !newVal.startsWith('/')) {
+                                      newVal = '/logos/' + newVal
+                                    }
+                                    updateTeamLogo(team.id, newVal)
                                     setEditingLogo(null)
                                   }
                                   if (e.key === 'Escape') setEditingLogo(null)
                                 }}
-                                placeholder="https://ejemplo.com/logo.png"
+                                placeholder="ej. logo-upgoing.png"
                                 className="flex-1 border border-blue-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                               />
                               <button

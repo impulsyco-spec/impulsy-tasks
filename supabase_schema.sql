@@ -5,6 +5,7 @@
 create table organizations (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  logo_url text,
   created_at timestamptz default now()
 );
 
@@ -61,6 +62,7 @@ create table tasks (
   priority text check (priority in ('alta', 'media', 'baja')) default 'media',
   category text,
   status text check (status in ('pending_approval', 'active', 'completed', 'rejected')) default 'pending_approval',
+  resources jsonb default '[]',
   due_date date,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

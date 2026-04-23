@@ -34,6 +34,7 @@ export default function Tasks() {
   const [editingTask, setEditingTask] = useState(null)
   const [showNewTask, setShowNewTask] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
+  const [organization, setOrganization] = useState(null)
   const [saving, setSaving] = useState(false)
 
   const isOwner = profile?.role === 'owner'
@@ -92,6 +93,14 @@ export default function Tasks() {
         transcripts: t.transcript_id ? (transcriptMap[t.transcript_id] || null) : null,
       }))
 
+      // Fetch organization
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('name, logo_url')
+        .eq('id', profile.organization_id)
+        .single()
+      
+      setOrganization(orgData)
       setTasks(enrichedTasks)
       setMembers(memberResult.data || [])
     } catch (err) {
@@ -162,6 +171,9 @@ export default function Tasks() {
       description: task.description,
       due_date: task.due_date || null,
       assigned_to: task.assigned_to || null,
+      resources: task.resources || [],
+      priority: task.priority,
+      category: task.category,
     }).eq('id', task.id)
 
     // Notificar si se asigna
@@ -190,6 +202,7 @@ export default function Tasks() {
       assigned_to: newTask.assigned_to || null,
       priority: newTask.priority,
       category: newTask.category || null,
+      resources: newTask.resources || [],
       status: 'pending_approval',
     }).select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
 
@@ -219,15 +232,25 @@ export default function Tasks() {
       <div className="flex items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
-            {activeTeam?.logo_url ? (
-              <img src={activeTeam.logo_url} alt={activeTeam.name} className="w-full h-full object-contain" />
+            {activeTeam?.logo_url || organization?.logo_url ? (
+              <img src={activeTeam?.logo_url || organization?.logo_url} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               <Users size={20} className="text-gray-300" />
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Tareas</h2>
-            {activeTeam && <p className="text-sm text-[#00B4D8] font-medium mt-0.5 truncate">{activeTeam.name}</p>}
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              Tareas 🚀
+            </h2>
+            <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
+              {organization && <span className="text-xs text-gray-400 font-medium truncate">{organization.name}</span>}
+              {activeTeam && (
+                <>
+                  <span className="text-xs text-gray-300">/</span>
+                  <span className="text-xs text-[#00B4D8] font-bold truncate">{activeTeam.name}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         {isOwner && (
@@ -240,6 +263,26 @@ export default function Tasks() {
             <span className="sm:hidden">Nueva</span>
           </button>
         )}
+      </div>
+
+      {/* Stage Counters */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-yellow-400">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Por aprobar</div>
+          <div className="text-xl font-black text-gray-900">{tasks.filter(t => t.status === 'pending_approval').length}</div>
+        </div>
+        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-blue-500">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Activas</div>
+          <div className="text-xl font-black text-gray-900">{tasks.filter(t => t.status === 'active').length}</div>
+        </div>
+        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-red-500">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Vencidas</div>
+          <div className="text-xl font-black text-red-600">{tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length}</div>
+        </div>
+        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-green-500">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Completadas</div>
+          <div className="text-xl font-black text-gray-900">{tasks.filter(t => t.status === 'completed').length}</div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -442,7 +485,41 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+            </div>
           </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-gray-500 uppercase font-bold tracking-wider">Recursos / Links</label>
+              <button 
+                type="button"
+                onClick={() => {
+                  const url = prompt('Introduce la URL del recurso:')
+                  if (url) {
+                    const name = prompt('Nombre del recurso:', 'Link')
+                    onEditChange({ resources: [...(editing.resources || []), { name, url }] })
+                  }
+                }}
+                className="text-[10px] text-blue-600 font-bold hover:underline"
+              >
+                + Agregar
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(editing.resources || []).map((res, ridx) => (
+                <div key={ridx} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2 py-1 shadow-sm">
+                  <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]">{res.name}</span>
+                  <button 
+                    onClick={() => onEditChange({ resources: editing.resources.filter((_, i) => i !== ridx) })}
+                    className="text-gray-400 hover:text-red-500"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <button onClick={onCancelEdit} className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-600 hover:bg-gray-50 transition-colors">
               Cancelar
@@ -512,6 +589,27 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                   </div>
                 )}
               </div>
+              
+              {/* Resources display */}
+              {(task.resources && task.resources.length > 0) && (
+                <div className="mt-3 pt-3 border-t border-gray-50">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Recursos</span>
+                  <div className="flex flex-wrap gap-2">
+                    {task.resources.map((res, ridx) => (
+                      <a 
+                        key={ridx} 
+                        href={res.url.startsWith('http') ? res.url : `https://${res.url}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-600 rounded px-2 py-1 text-[10px] font-bold hover:bg-blue-100 transition-colors shadow-sm"
+                      >
+                        <FileText size={10} />
+                        {res.name}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions */}

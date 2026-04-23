@@ -11,18 +11,26 @@ export async function extractTasksFromTranscript(transcript) {
       messages: [
         {
           role: 'user',
-          content: `Analiza el siguiente transcript de una reunión e identifica todas las tareas pendientes o action items mencionados.
+          content: `Analiza el siguiente transcript de una reunión e identifica absolutamente todas las tareas pendientes o action items mencionados, por más mínimos que sean. Es CRÍTICO que no se escape ningún detalle.
 
-Devuelve ÚNICAMENTE un JSON válido con este formato, sin texto adicional:
+Para cada tarea, sigue estrictamente esta estructura de redacción para el título:
+"Hacer [acción específica] para [objetivo o destinatario], por medio de [método o herramienta si se menciona]".
+
+Ejemplo: "Hacer el diseño del banner para la campaña de mayo, por medio de Figma".
+
+Devuelve ÚNICAMENTE un JSON válido con este formato, incluyendo emojis adecuados en el título:
 {
   "tasks": [
     {
-      "title": "Título corto de la tarea",
-      "description": "Descripción detallada de la tarea",
-      "due_date": "YYYY-MM-DD o null si no se menciona fecha",
-      "assigned_name": "Nombre de la persona responsable mencionada en el transcript, o null si no se menciona",
-      "priority": "alta, media o baja (inferir segun urgencia)",
-      "category": "Marketing, Ventas, Diseño, Desarrollo, Legal, Operaciones o null"
+      "title": "📌 Título con la estructura solicitada",
+      "description": "Descripción detallada",
+      "due_date": "YYYY-MM-DD o null",
+      "assigned_name": "Nombre o null",
+      "priority": "alta, media o baja",
+      "category": "Marketing, Ventas, Diseño, Desarrollo, Legal, Operaciones o null",
+      "resources": [
+        {"name": "Nombre del recurso/link", "url": "URL si se menciona"}
+      ]
     }
   ]
 }
