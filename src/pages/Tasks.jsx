@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
 import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag, FileText, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { getLogoUrl } from '../lib/utils'
 
 const STATUS_CONFIG = {
   pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
@@ -233,7 +234,7 @@ export default function Tasks() {
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
             {activeTeam?.logo_url || organization?.logo_url ? (
-              <img src={activeTeam?.logo_url || organization?.logo_url} alt="Logo" className="w-full h-full object-contain" />
+              <img src={getLogoUrl(activeTeam?.logo_url || organization?.logo_url)} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               <Users size={20} className="text-gray-300" />
             )}
@@ -485,10 +486,9 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-2 mt-4">
             <div className="flex items-center justify-between">
               <label className="text-xs text-gray-500 uppercase font-bold tracking-wider">Recursos / Links</label>
               <button 

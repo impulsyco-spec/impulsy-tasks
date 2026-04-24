@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { getLogoUrl } from '../lib/utils'
 import { Users, Plus, X, ChevronDown } from 'lucide-react'
 
 export default function Teams() {
@@ -152,7 +153,7 @@ export default function Teams() {
                 >
                   <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {team.logo_url ? (
-                      <img src={(team.logo_url.startsWith('http') || team.logo_url.startsWith('/') ? team.logo_url : '/logos/' + team.logo_url) + '?t=' + Date.now()} alt={team.name} className="w-full h-full object-contain" />
+                      <img src={getLogoUrl(team.logo_url)} alt={team.name} className="w-full h-full object-contain" />
                     ) : (
                       <Users size={18} className="text-gray-400" />
                     )}
@@ -178,7 +179,7 @@ export default function Teams() {
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                           {team.logo_url ? (
-                            <img src={(team.logo_url.startsWith('http') || team.logo_url.startsWith('/') ? team.logo_url : '/logos/' + team.logo_url) + '?t=' + Date.now()} alt={team.name} className="w-full h-full object-contain p-2" />
+                            <img src={getLogoUrl(team.logo_url)} alt={team.name} className="w-full h-full object-contain p-2" />
                           ) : (
                             <Users size={24} className="text-gray-300" />
                           )}
@@ -190,14 +191,10 @@ export default function Teams() {
                               <input
                                 type="text"
                                 autoFocus
-                                defaultValue={team.logo_url ? team.logo_url.replace(/^\/logos\//, '') : ''}
+                                defaultValue={team.logo_url || ''}
                                 onKeyDown={e => {
                                   if (e.key === 'Enter') {
-                                    let newVal = e.target.value.trim()
-                                    if (newVal && !newVal.startsWith('http') && !newVal.startsWith('/')) {
-                                      newVal = '/logos/' + newVal
-                                    }
-                                    updateTeamLogo(team.id, newVal)
+                                    updateTeamLogo(team.id, e.target.value.trim() || null)
                                     setEditingLogo(null)
                                   }
                                   if (e.key === 'Escape') setEditingLogo(null)

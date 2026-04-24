@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
 import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
+import { getLogoUrl } from '../lib/utils'
 import {
   LayoutDashboard,
   FileText,
@@ -94,7 +95,7 @@ export default function Layout({ children }) {
               {selectedTeamId && teams.find(t => t.id === selectedTeamId)?.logo_url && (
                 <div className="w-6 h-6 rounded bg-white flex-shrink-0 overflow-hidden border border-white/20">
                   <img 
-                    src={teams.find(t => t.id === selectedTeamId).logo_url} 
+                    src={getLogoUrl(teams.find(t => t.id === selectedTeamId).logo_url)} 
                     alt="Team Logo" 
                     className="w-full h-full object-contain"
                   />
@@ -119,7 +120,7 @@ export default function Layout({ children }) {
             <div className="mt-2 flex items-center gap-2">
               {teams[0].logo_url && (
                 <div className="w-5 h-5 rounded bg-white overflow-hidden border border-white/20">
-                  <img src={teams[0].logo_url} alt="Team Logo" className="w-full h-full object-contain" />
+                  <img src={getLogoUrl(teams[0].logo_url)} alt="Team Logo" className="w-full h-full object-contain" />
                 </div>
               )}
               <p className="text-[#00B4D8] text-xs font-medium truncate">{teams[0].name}</p>

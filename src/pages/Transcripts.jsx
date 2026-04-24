@@ -436,6 +436,7 @@ export default function Transcripts() {
                           </span>
                         )}
                       </div>
+                    </div>
                     {/* Resources */}
                     {task.selected && (
                       <div className="mt-2 space-y-2">

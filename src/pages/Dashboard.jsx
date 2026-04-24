@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
+import { getLogoUrl } from '../lib/utils'
 import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle, FileText } from 'lucide-react'
 
 const STATUS_LABELS = {
@@ -102,7 +103,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
             {activeTeam?.logo_url || profile?.organizations?.logo_url ? (
-              <img src={activeTeam?.logo_url || profile?.organizations?.logo_url} alt="Logo" className="w-full h-full object-contain" />
+              <img src={getLogoUrl(activeTeam?.logo_url || profile?.organizations?.logo_url)} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               <Sparkles size={24} className="text-blue-500" />
             )}
