@@ -64,7 +64,7 @@ export default function Tasks() {
     try {
       let taskQuery = supabase
         .from('tasks')
-        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), teams(id, name, logo_url)')
+        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)')
         .eq('organization_id', profile.organization_id)
       if (profile.role === 'owner' && selectedTeamId) {
         taskQuery = taskQuery.eq('team_id', selectedTeamId)
@@ -626,14 +626,14 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                     )}
                   </div>
                 )}
-                {task.teams && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md shadow-sm">
-                    {task.teams.logo_url ? (
-                      <img src={getLogoUrl(task.teams.logo_url)} alt="Logo" className="w-5 h-5 object-contain" />
+                {task.team && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white border border-slate-200 rounded-md shadow-sm ml-auto">
+                    {task.team.logo_url ? (
+                      <img src={getLogoUrl(task.team.logo_url)} alt="Logo" className="w-4 h-4 object-contain" />
                     ) : (
                       <Users size={10} className="text-gray-300" />
                     )}
-                    <span className="text-[10px] text-gray-600 font-black uppercase tracking-tight">{task.teams.name}</span>
+                    <span className="text-[10px] text-slate-700 font-bold uppercase tracking-tight">{task.team.name}</span>
                   </div>
                 )}
               </div>
