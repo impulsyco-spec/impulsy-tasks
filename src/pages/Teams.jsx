@@ -258,15 +258,17 @@ export default function Teams() {
                                 </span>
                               </div>
                               
-                              <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center gap-1 ml-2 transition-opacity">
                                 <button
+                                  type="button"
                                   onClick={() => updateMemberRole(m.profile_id, m.profiles?.role === 'manager' ? 'member' : 'manager')}
-                                  className={`p-1 rounded-md transition-colors ${m.profiles?.role === 'manager' ? 'text-gray-400 hover:text-blue-500 hover:bg-blue-50' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                  className={`p-1 rounded-md transition-colors ${m.profiles?.role === 'manager' ? 'text-blue-500 bg-blue-50 hover:bg-blue-100' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
                                   title={m.profiles?.role === 'manager' ? 'Quitar Sub-Owner' : 'Hacer Sub-Owner'}
                                 >
                                   {m.profiles?.role === 'manager' ? <Users size={12} /> : <Shield size={12} />}
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => removeMember(team.id, m.profile_id)}
                                   className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                   title="Eliminar del equipo"
