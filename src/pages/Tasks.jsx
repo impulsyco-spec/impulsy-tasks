@@ -68,10 +68,23 @@ export default function Tasks() {
         .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)')
         .eq('organization_id', profile.organization_id)
       if (isOwner || isManager) {
-        if (selectedTeamId) taskQuery = taskQuery.eq('team_id', selectedTeamId)
+        if (selectedTeamId) {
+          // Si hay un equipo seleccionado, mostrar tareas de ese equipo O tareas asignadas a mí
+          taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
+        }
       } else {
-        // Normal members only see their assigned active/completed tasks
-        taskQuery = taskQuery.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
+        // Miembros ven tareas de sus equipos O tareas asignadas a ellos
+        const { data: memberTeams } = await supabase
+          .from('team_members')
+          .select('team_id')
+          .eq('profile_id', profile.id)
+        
+        const teamIds = memberTeams?.map(mt => mt.team_id) || []
+        if (teamIds.length > 0) {
+          taskQuery = taskQuery.or(`team_id.in.(${teamIds.join(',')}),assigned_to.eq.${profile.id}`)
+        } else {
+          taskQuery = taskQuery.eq('assigned_to', profile.id)
+        }
       }
 
       const [taskResult, memberResult] = await Promise.all([
@@ -475,7 +488,7 @@ export default function Tasks() {
 
 function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onApprove, onReject, onComplete, onDelete, saving, navigate }) {
   const isOverdue = task.status === 'active' && task.due_date && task.due_date < today
-  const cfg = STATUS_CONFIG[task.status]
+  const cfg = STATUS_CONFIG[task.status] || { label: task.status, color: 'bg-gray-100 text-gray-700 border-gray-200' }
 
   return (
     <div className={`bg-white rounded-xl border p-4 lg:p-5 transition-shadow hover:shadow-sm ${isOverdue ? 'border-red-200' : 'border-gray-200'}`}>
