@@ -7,6 +7,7 @@ import { Users, Plus, X, ChevronDown, Shield } from 'lucide-react'
 export default function Teams() {
   const { profile } = useAuth()
   const isOwner = profile?.role === 'owner'
+  const isManager = profile?.role === 'manager'
   const [teams, setTeams] = useState([])
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -106,13 +107,13 @@ export default function Teams() {
 
   if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
 
-  if (!isOwner) return (
+  if (!isOwner && !isManager) return (
     <div className="p-8 text-center">
       <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
         <X size={32} />
       </div>
       <h2 className="text-xl font-bold text-gray-900 mb-2">Acceso restringido</h2>
-      <p className="text-gray-500">Solo los administradores pueden gestionar equipos.</p>
+      <p className="text-gray-500">Solo los administradores o sub-owners pueden gestionar equipos.</p>
     </div>
   )
 

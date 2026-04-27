@@ -21,7 +21,7 @@ function OwnerRoute({ children }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando...</div>
   if (!user) return <Navigate to="/" replace />
-  if (profile?.role !== 'owner') return <Navigate to="/dashboard" replace />
+  if (profile?.role !== 'owner' && profile?.role !== 'manager') return <Navigate to="/dashboard" replace />
   return children
 }
 

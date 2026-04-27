@@ -70,13 +70,14 @@ export default function Layout({ children }) {
   }
 
   const isOwner = profile?.role === 'owner'
+  const isManager = profile?.role === 'manager'
 
   const nav = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/transcripts', icon: FileText, label: 'Transcripts' },
     { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
     { to: '/notifications', icon: Bell, label: 'Notificaciones', badge: unread },
-    ...(isOwner ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
+    ...(isOwner || isManager ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
   ]
 
   const initials = profile?.full_name
@@ -90,7 +91,7 @@ export default function Layout({ children }) {
         <div className="px-5 pt-5 pb-4 border-b border-white/10">
           <Logo size="sm" dark />
           <p className="text-slate-500 text-xs mt-2 truncate">{profile?.organizations?.name}</p>
-          {(isOwner || teams.length > 1) && teams.length > 0 && (
+          {(isOwner || isManager || teams.length > 1) && teams.length > 0 && (
             <div className="mt-3 relative flex items-center gap-2">
               {selectedTeamId && teams.find(t => t.id === selectedTeamId)?.logo_url && (
                 <div className="w-8 h-8 rounded bg-white flex-shrink-0 overflow-hidden border border-white/20">
@@ -107,7 +108,7 @@ export default function Layout({ children }) {
                   onChange={e => setSelectedTeamId(e.target.value)}
                   className="w-full appearance-none bg-white/10 text-white text-[11px] rounded-lg pl-2 pr-6 py-1.5 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
                 >
-                  {isOwner && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
+                  {(isOwner || isManager) && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
                   {teams.map(t => (
                     <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
                   ))}
@@ -116,7 +117,7 @@ export default function Layout({ children }) {
               </div>
             </div>
           )}
-          {!isOwner && teams.length === 1 && (
+          {!(isOwner || isManager) && teams.length === 1 && (
             <div className="mt-2 flex items-center gap-2">
               {teams[0].logo_url && (
                 <div className="w-5 h-5 rounded bg-white overflow-hidden border border-white/20">
@@ -149,7 +150,7 @@ export default function Layout({ children }) {
         </nav>
 
         <div className="p-3 border-t border-white/10 space-y-1">
-          {profile?.role === 'owner' && (
+          {(isOwner || isManager) && (
             <button onClick={copyOrgId}
               className="flex items-center gap-2 w-full px-3 py-2 text-xs text-slate-500 hover:bg-white/10 hover:text-slate-300 rounded-lg transition-colors">
               {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
@@ -233,7 +234,7 @@ export default function Layout({ children }) {
                   <X size={20} />
                 </button>
               </div>
-              {(isOwner || teams.length > 1) && teams.length > 0 && (
+              {(isOwner || isManager || teams.length > 1) && teams.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {selectedTeamId && teams.find(t => t.id === selectedTeamId)?.logo_url && (
                     <div className="flex items-center gap-2">
@@ -253,7 +254,7 @@ export default function Layout({ children }) {
                       onChange={e => setSelectedTeamId(e.target.value)}
                       className="w-full appearance-none bg-white/10 text-white text-xs rounded-lg pl-3 pr-7 py-2 border border-white/20 focus:outline-none focus:border-[#00B4D8] cursor-pointer"
                     >
-                      {isOwner && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
+                      {(isOwner || isManager) && <option value="" className="bg-[#0D1F3C]">Todos los equipos</option>}
                       {teams.map(t => (
                         <option key={t.id} value={t.id} className="bg-[#0D1F3C]">{t.name}</option>
                       ))}
@@ -262,7 +263,7 @@ export default function Layout({ children }) {
                   </div>
                 </div>
               )}
-              {!isOwner && teams.length === 1 && (
+              {!(isOwner || isManager) && teams.length === 1 && (
                 <div className="mt-2 flex items-center gap-2">
                   {teams[0].logo_url && (
                     <div className="w-6 h-6 rounded bg-white overflow-hidden border border-white/20">
@@ -296,7 +297,7 @@ export default function Layout({ children }) {
             </div>
 
             <div className="p-4 border-t border-white/10 space-y-2">
-              {profile?.role === 'owner' && (
+              {(isOwner || isManager) && (
                 <button onClick={() => { copyOrgId(); setMobileMenuOpen(false) }}
                   className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-400 hover:bg-white/10 hover:text-white rounded-lg transition-colors">
                   {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}

@@ -46,15 +46,15 @@ export default function Notifications() {
     let result = data || []
 
     // Members: solo ver notificaciones de tareas asignadas a ellos
-    if (profile.role !== 'owner') {
+    if (profile.role === 'member') {
       result = result.filter(n => {
         if (!n.tasks) return true // notificaciones sin tarea (genéricas)
         return n.tasks.assigned_to === profile.id
       })
     }
 
-    // Filtro por equipo (solo owners)
-    if (profile.role === 'owner' && selectedTeamId) {
+    // Filtro por equipo (owners y managers)
+    if ((profile.role === 'owner' || profile.role === 'manager') && selectedTeamId) {
       result = result.filter(n => {
         if (!n.tasks) return true
         if (!n.tasks.team_id) return true

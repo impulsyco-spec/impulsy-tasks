@@ -29,20 +29,23 @@ export default function Dashboard() {
 
   async function fetchData() {
     const today = new Date().toISOString().split('T')[0]
+    const isOwner = profile?.role === 'owner'
+    const isManager = profile?.role === 'manager'
+
     let query = supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', profile.organization_id)
-    if (profile.role === 'owner' && selectedTeamId) {
+    
+    if ((isOwner || isManager) && selectedTeamId) {
       query = query.eq('team_id', selectedTeamId)
-    }
-    if (profile.role !== 'owner') {
+    } else if (!isOwner && !isManager) {
       query = query.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
     }
     const { data: tasks } = await query.order('created_at', { ascending: false })
 
     if (tasks) {
-      if (profile.role === 'owner') {
+      if (profile.role === 'owner' || profile.role === 'manager') {
         setStats({
           pending: tasks.filter(t => t.status === 'pending_approval').length,
           active: tasks.filter(t => t.status === 'active').length,
@@ -121,7 +124,7 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
-        {profile?.role === 'owner' && (
+        {(profile?.role === 'owner' || profile?.role === 'manager') && (
           <StatCard
             icon={<Clock size={18} />}
             label="Por aprobar"
@@ -238,7 +241,7 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3">
-          {profile?.role === 'owner' && (
+          {(profile?.role === 'owner' || profile?.role === 'manager') && (
             <>
               <h3 className="font-semibold text-gray-900 text-sm px-1">Acciones rápidas</h3>
               <button

@@ -9,6 +9,7 @@ export default function Transcripts() {
   const { profile } = useAuth()
   const navigate = useNavigate()
   const isOwner = profile?.role === 'owner'
+  const isManager = profile?.role === 'manager'
   const [transcripts, setTranscripts] = useState([])
   const [teams, setTeams] = useState([])
   const [allMembers, setAllMembers] = useState([])
@@ -48,8 +49,8 @@ export default function Transcripts() {
       .select('*, profiles(full_name), tasks(id, title, status, assigned_to, profiles!tasks_assigned_to_fkey(full_name))')
       .eq('organization_id', profile.organization_id)
 
-    // Si no es owner, filtrar por los equipos a los que pertenece o si él lo creó
-    if (profile.role !== 'owner') {
+    // Si no es owner ni manager, filtrar por los equipos a los que pertenece o si él lo creó
+    if (profile.role !== 'owner' && profile.role !== 'manager') {
       const { data: memberTeams } = await supabase
         .from('team_members')
         .select('team_id')
@@ -69,15 +70,18 @@ export default function Transcripts() {
 
   async function handleExtract(e) {
     e.preventDefault()
+    if (!form.content.trim()) return
+    
     setExtracting(true)
     setError('')
     try {
+      // 1. Guardar el transcript primero
       const { data: transcript, error: tErr } = await supabase
         .from('transcripts')
         .insert({
           organization_id: profile.organization_id,
           created_by: profile.id,
-          title: form.title,
+          title: form.title || 'Sin título',
           content: form.content,
           source: 'manual',
           team_id: form.team_id || null,
@@ -85,61 +89,97 @@ export default function Transcripts() {
         })
         .select()
         .single()
+      
       if (tErr) throw tErr
+      if (!transcript) throw new Error('No se pudo crear el registro del transcript')
+      
       setCurrentTranscriptId(transcript.id)
 
+      // 2. Extraer tareas con IA
       const result = await extractTasksFromTranscript(form.content)
+      if (!result || !result.tasks) {
+        throw new Error('La IA no devolvió tareas válidas. Intenta con un texto más claro.')
+      }
+
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const defaultDueDate = tomorrow.toISOString().split('T')[0]
-      setExtracted(result.tasks.map(t => ({ ...t, selected: true, assigned_to: '', priority: t.priority || 'media', category: t.category || '', resources: t.resources || [], due_date: t.due_date || defaultDueDate })))
+
+      setExtracted(result.tasks.map(t => ({
+        ...t,
+        selected: true,
+        assigned_to: '',
+        priority: t.priority || 'media',
+        category: t.category || '',
+        resources: t.resources || [],
+        due_date: t.due_date || defaultDueDate
+      })))
 
       fetchTranscripts()
     } catch (err) {
-      setError(err.message)
+      console.error('Error en handleExtract:', err)
+      setError('Error al procesar: ' + (err.message || 'Error desconocido'))
+      alert('Error al procesar el transcript: ' + (err.message || 'Revisa la consola'))
+    } finally {
+      setExtracting(false)
     }
-    setExtracting(false)
   }
 
   async function handleSaveTasks() {
+    if (!extracted || extracted.filter(t => t.selected).length === 0) return
+    
     setSaving(true)
-    const selectedTasks = extracted.filter(t => t.selected)
-    const toInsert = selectedTasks.map(t => ({
-      organization_id: profile.organization_id,
-      transcript_id: currentTranscriptId,
-      created_by: profile.id,
-      title: t.title,
-      description: t.description,
-      due_date: t.due_date || null,
-      assigned_to: t.assigned_to || null,
-      team_id: form.team_id || null,
-      priority: t.priority || 'media',
-      category: t.category || null,
-      resources: t.resources || [],
-      status: 'pending_approval',
-    }))
+    try {
+      const selectedTasks = extracted.filter(t => t.selected)
+      const toInsert = selectedTasks.map(t => ({
+        organization_id: profile.organization_id,
+        transcript_id: currentTranscriptId,
+        created_by: profile.id,
+        title: t.title,
+        description: t.description,
+        due_date: t.due_date || null,
+        assigned_to: t.assigned_to || null,
+        team_id: form.team_id || null,
+        priority: t.priority || 'media',
+        category: t.category || null,
+        resources: t.resources || [],
+        status: (isOwner || isManager) ? 'active' : 'pending_approval',
+      }))
 
-    const { data: insertedTasks } = await supabase.from('tasks').insert(toInsert).select()
+      const { data: insertedTasks, error: sErr } = await supabase
+        .from('tasks')
+        .insert(toInsert)
+        .select()
 
-    if (insertedTasks) {
-      const memberNotifs = insertedTasks
-        .filter(t => t.assigned_to && t.assigned_to !== profile.id)
-        .map(t => ({
-          user_id: t.assigned_to,
-          task_id: t.id,
-          message: `Se te asignó la tarea "${t.title}". Esperando aprobación.`,
-        }))
-      if (memberNotifs.length > 0) {
-        await supabase.from('notifications').insert(memberNotifs)
+      if (sErr) throw sErr
+
+      if (insertedTasks && insertedTasks.length > 0) {
+        const memberNotifs = insertedTasks
+          .filter(t => t.assigned_to && t.assigned_to !== profile.id)
+          .map(t => ({
+            user_id: t.assigned_to,
+            task_id: t.id,
+            message: `Se te asignó la tarea "${t.title}".`,
+          }))
+        
+        if (memberNotifs.length > 0) {
+          await supabase.from('notifications').insert(memberNotifs)
+        }
       }
-    }
 
-    setSaving(false)
-    setExtracted(null)
-    setShowForm(false)
-    setForm({ title: '', content: '', team_id: '', meeting_date: new Date().toISOString().split('T')[0] })
-    fetchTranscripts() // Refrescar para ver las tareas vinculadas
-    navigate('/tasks?filter=pending_approval')
+      setExtracted(null)
+      setShowForm(false)
+      setForm({ title: '', content: '', team_id: '', meeting_date: new Date().toISOString().split('T')[0] })
+      fetchTranscripts()
+      
+      const targetFilter = (isOwner || isManager) ? 'active' : 'pending_approval'
+      navigate(`/tasks?filter=${targetFilter}`)
+    } catch (err) {
+      console.error('Error al guardar tareas:', err)
+      alert('Error al guardar las tareas: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleDeleteTranscript(e, id) {
@@ -196,7 +236,7 @@ export default function Transcripts() {
           <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Transcripts</h2>
           <p className="text-gray-500 mt-1 text-sm">Sube reuniones y extrae tareas con IA</p>
         </div>
-        {isOwner && (
+        {(isOwner || isManager) && (
           <button
             onClick={() => { setShowForm(true); setExtracted(null) }}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -294,7 +334,7 @@ export default function Transcripts() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha Reunión:</span>
-                {isOwner ? (
+                {isOwner || isManager ? (
                   <input
                     type="date"
                     value={form.meeting_date}
@@ -312,7 +352,7 @@ export default function Transcripts() {
                 )}
               </div>
               <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{extracted.filter(t => t.selected).length} seleccionadas</span>
-              {isOwner && (
+              {(isOwner || isManager) && (
                 <button
                   onClick={addNewTask}
                   className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors shadow-sm"
@@ -328,23 +368,23 @@ export default function Transcripts() {
             {extracted.map((task, idx) => (
               <div key={idx} className={`border rounded-lg p-4 transition-colors ${task.selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
                 <div className="flex items-start gap-3">
-                  <button onClick={() => isOwner && toggleTask(idx)} className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'} ${!isOwner ? 'cursor-default' : ''}`}>
+                  <button onClick={() => (isOwner || isManager) && toggleTask(idx)} className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'} ${!(isOwner || isManager) ? 'cursor-default' : ''}`}>
                     {task.selected && <Check size={12} className="text-white" />}
                   </button>
                   <div className="flex-1 space-y-2">
                     <input 
                       type="text" 
                       value={task.title} 
-                      onChange={e => isOwner && updateTask(idx, 'title', e.target.value)} 
-                      readOnly={!isOwner}
-                      className={`w-full text-sm font-medium bg-transparent border-0 border-b border-transparent ${isOwner ? 'hover:border-gray-300 focus:border-blue-500' : ''} focus:outline-none py-0`} 
+                      onChange={e => (isOwner || isManager) && updateTask(idx, 'title', e.target.value)} 
+                      readOnly={!(isOwner || isManager)}
+                      className={`w-full text-sm font-medium bg-transparent border-0 border-b border-transparent ${isOwner || isManager ? 'hover:border-gray-300 focus:border-blue-500' : ''} focus:outline-none py-0`} 
                     />
                     <textarea 
                       value={task.description} 
-                      onChange={e => isOwner && updateTask(idx, 'description', e.target.value)} 
-                      readOnly={!isOwner}
+                      onChange={e => (isOwner || isManager) && updateTask(idx, 'description', e.target.value)} 
+                      readOnly={!(isOwner || isManager)}
                       rows={2} 
-                      className={`w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent ${isOwner ? 'hover:border-gray-300 focus:border-blue-500' : ''} focus:outline-none resize-none py-0`} 
+                      className={`w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent ${isOwner || isManager ? 'hover:border-gray-300 focus:border-blue-500' : ''} focus:outline-none resize-none py-0`} 
                     />
                     <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
@@ -352,8 +392,8 @@ export default function Transcripts() {
                         <input 
                           type="date" 
                           value={task.due_date}
-                          onChange={e => isOwner && updateTask(idx, 'due_date', e.target.value)} 
-                          readOnly={!isOwner}
+                          onChange={e => (isOwner || isManager) && updateTask(idx, 'due_date', e.target.value)} 
+                          readOnly={!(isOwner || isManager)}
                           className="text-xs text-gray-600 bg-white border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400" 
                         />
                       </div>
@@ -361,8 +401,8 @@ export default function Transcripts() {
                         <span className="text-xs text-gray-500">Prioridad:</span>
                         <select 
                           value={task.priority || 'media'} 
-                          onChange={e => isOwner && updateTask(idx, 'priority', e.target.value)} 
-                          disabled={!isOwner}
+                          onChange={e => (isOwner || isManager) && updateTask(idx, 'priority', e.target.value)} 
+                          disabled={!(isOwner || isManager)}
                           className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
                         >
                           <option value="alta">Alta</option>
@@ -374,8 +414,8 @@ export default function Transcripts() {
                         <span className="text-xs text-gray-500">Categoría:</span>
                         <select 
                           value={task.category || ''} 
-                          onChange={e => isOwner && updateTask(idx, 'category', e.target.value)} 
-                          disabled={!isOwner}
+                          onChange={e => (isOwner || isManager) && updateTask(idx, 'category', e.target.value)} 
+                          disabled={!(isOwner || isManager)}
                           className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
                         >
                           <option value="">📁 Sin categ.</option>
@@ -392,7 +432,7 @@ export default function Transcripts() {
                       </div>
                       <div className="flex items-center gap-2 relative">
                         <span className="text-xs text-gray-500">Asignar:</span>
-                        {isOwner ? (
+                        {isOwner || isManager ? (
                           <div className="relative">
                             <input
                               type="text"
@@ -446,7 +486,7 @@ export default function Transcripts() {
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recursos / Links</span>
-                          {isOwner && (
+                          {(isOwner || isManager) && (
                             <button 
                               onClick={() => {
                                 const url = prompt('Introduce la URL del recurso:')
@@ -465,7 +505,7 @@ export default function Transcripts() {
                           {(task.resources || []).map((res, ridx) => (
                             <div key={ridx} className="flex items-center gap-1.5 bg-white border border-gray-200 rounded px-2 py-1 shadow-sm">
                               <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]">{res.name}: {res.url}</span>
-                              {isOwner && (
+                              {(isOwner || isManager) && (
                                 <button 
                                   onClick={() => updateTask(idx, 'resources', task.resources.filter((_, i) => i !== ridx))}
                                   className="text-gray-400 hover:text-red-500"
@@ -486,7 +526,7 @@ export default function Transcripts() {
               </div>
             ))}
 
-            {isOwner && (
+            {(isOwner || isManager) && (
               <button
                 onClick={addNewTask}
                 className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all group"
@@ -501,9 +541,9 @@ export default function Transcripts() {
 
           <div className="flex gap-3">
             <button onClick={() => { setExtracted(null); setShowForm(false) }} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-              {isOwner ? 'Descartar' : 'Cerrar'}
+              {isOwner || isManager ? 'Descartar' : 'Cerrar'}
             </button>
-            {isOwner && (
+            {(isOwner || isManager) && (
               <button onClick={handleSaveTasks} disabled={saving || extracted.filter(t => t.selected).length === 0} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
                 <Check size={14} />
                 {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} tareas`}
@@ -562,7 +602,7 @@ export default function Transcripts() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isOwner && (
+                    {(isOwner || isManager) && (
                       <button
                         onClick={(e) => handleDeleteTranscript(e, t.id)}
                         className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

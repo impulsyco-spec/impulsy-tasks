@@ -67,16 +67,8 @@ export default function Tasks() {
         .from('tasks')
         .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)')
         .eq('organization_id', profile.organization_id)
-      if (profile.role === 'owner') {
+      if (isOwner || isManager) {
         if (selectedTeamId) taskQuery = taskQuery.eq('team_id', selectedTeamId)
-      } else if (profile.role === 'manager') {
-        // Managers see all tasks for their selected team
-        if (selectedTeamId) {
-          taskQuery = taskQuery.eq('team_id', selectedTeamId)
-        } else {
-          // If no team selected (unlikely for manager), show nothing to be safe
-          taskQuery = taskQuery.eq('id', '00000000-0000-0000-0000-000000000000')
-        }
       } else {
         // Normal members only see their assigned active/completed tasks
         taskQuery = taskQuery.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
@@ -212,31 +204,47 @@ export default function Tasks() {
 
   async function createTask(e) {
     e.preventDefault()
-    setSaving(true)
-    const { data } = await supabase.from('tasks').insert({
-      organization_id: profile.organization_id,
-      created_by: profile.id,
-      title: newTask.title,
-      description: newTask.description,
-      due_date: newTask.due_date || null,
-      assigned_to: newTask.assigned_to || null,
-      priority: newTask.priority,
-      category: newTask.category || null,
-      resources: newTask.resources || [],
-      status: 'pending_approval',
-    }).select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
+    if (!selectedTeamId && !isOwner) {
+      alert('Debes seleccionar un equipo para crear una tarea.')
+      return
+    }
 
-    if (data) setTasks(prev => [data, ...prev])
-    setNewTask({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
-    setShowNewTask(false)
-    setSaving(false)
+    setSaving(true)
+    try {
+      const { data, error } = await supabase.from('tasks').insert({
+        organization_id: profile.organization_id,
+        team_id: selectedTeamId || null,
+        created_by: profile.id,
+        title: newTask.title,
+        description: newTask.description,
+        due_date: newTask.due_date || null,
+        assigned_to: newTask.assigned_to || null,
+        priority: newTask.priority,
+        category: newTask.category || null,
+        resources: newTask.resources || [],
+        status: (isOwner || isManager) ? 'active' : 'pending_approval',
+      }).select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)').single()
+
+      if (error) throw error
+
+      if (data) {
+        setTasks(prev => [{ ...data, transcripts: null }, ...prev])
+      }
+      setNewTask({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
+      setShowNewTask(false)
+    } catch (err) {
+      console.error('Error creating task:', err)
+      alert('Error al crear la tarea. Por favor intenta de nuevo.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const filters = [
     { id: 'all', label: 'Todas 🌐' },
-    ...(isOwner ? [{ id: 'pending_approval', label: 'Por aprobar ⏳' }] : []),
+    ...(isOwner || isManager ? [{ id: 'pending_approval', label: 'Por aprobar ⏳' }] : []),
     { id: 'active', label: 'Activas 🔥' },
-    ...(isOwner ? [{ id: 'mine', label: 'Mis tareas ⚡' }] : []),
+    ...(isOwner || isManager ? [{ id: 'mine', label: 'Mis tareas ⚡' }] : []),
     { id: 'completed', label: 'Completadas ✅' },
   ]
 
