@@ -49,6 +49,7 @@ export default function Tasks() {
   const [saving, setSaving] = useState(false)
 
   const isOwner = profile?.role === 'owner'
+  const isManager = profile?.role === 'manager'
   const today = new Date().toISOString().split('T')[0]
   const activeTeam = Array.isArray(teams) ? teams.find(t => t.id === selectedTeamId) : undefined
 
@@ -66,10 +67,18 @@ export default function Tasks() {
         .from('tasks')
         .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)')
         .eq('organization_id', profile.organization_id)
-      if (profile.role === 'owner' && selectedTeamId) {
-        taskQuery = taskQuery.eq('team_id', selectedTeamId)
-      }
-      if (profile.role !== 'owner') {
+      if (profile.role === 'owner') {
+        if (selectedTeamId) taskQuery = taskQuery.eq('team_id', selectedTeamId)
+      } else if (profile.role === 'manager') {
+        // Managers see all tasks for their selected team
+        if (selectedTeamId) {
+          taskQuery = taskQuery.eq('team_id', selectedTeamId)
+        } else {
+          // If no team selected (unlikely for manager), show nothing to be safe
+          taskQuery = taskQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+        }
+      } else {
+        // Normal members only see their assigned active/completed tasks
         taskQuery = taskQuery.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
       }
 
@@ -264,7 +273,7 @@ export default function Tasks() {
             </div>
           </div>
         </div>
-        {isOwner && (
+        {(isOwner || isManager) && (
           <button
             onClick={() => setShowNewTask(true)}
             className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 lg:px-4 rounded-lg text-xs lg:text-sm font-medium hover:bg-blue-700 transition-colors flex-shrink-0"
@@ -662,7 +671,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
 
             {/* Actions */}
             <div className="flex items-center gap-0.5 flex-shrink-0">
-              {isOwner && task.status === 'pending_approval' && (
+              {(isOwner || isManager) && task.status === 'pending_approval' && (
                 <>
                   <button
                     onClick={onEdit}
@@ -687,7 +696,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                   </button>
                 </>
               )}
-              {task.status === 'active' && isOwner && (
+              {task.status === 'active' && (isOwner || isManager) && (
                 <>
                   <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
                     <Edit2 size={14} />
@@ -701,7 +710,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                   </button>
                 </>
               )}
-              {isOwner && (
+              {(isOwner || isManager) && (
                 <button
                   onClick={onDelete}
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

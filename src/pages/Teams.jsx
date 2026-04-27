@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { getLogoUrl } from '../lib/utils'
-import { Users, Plus, X, ChevronDown } from 'lucide-react'
+import { Users, Plus, X, ChevronDown, Shield } from 'lucide-react'
 
 export default function Teams() {
   const { profile } = useAuth()
@@ -24,7 +24,7 @@ export default function Teams() {
     const [{ data: t }, { data: m }] = await Promise.all([
       supabase
         .from('teams')
-        .select('*, team_members(profile_id, profiles(id, full_name))')
+        .select('*, team_members(profile_id, profiles(id, full_name, role))')
         .eq('organization_id', profile.organization_id)
         .order('created_at'),
       supabase
@@ -35,6 +35,25 @@ export default function Teams() {
     setTeams(t || [])
     setMembers(m || [])
     setLoading(false)
+  }
+
+  async function updateMemberRole(profileId, newRole) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', profileId)
+    
+    if (!error) {
+      setTeams(prev => prev.map(team => ({
+        ...team,
+        team_members: team.team_members?.map(m => 
+          m.profile_id === profileId 
+            ? { ...m, profiles: { ...m.profiles, role: newRole } }
+            : m
+        )
+      })))
+      setMembers(prev => prev.map(m => m.id === profileId ? { ...m, role: newRole } : m))
+    }
   }
 
   async function createTeam(e) {
@@ -48,7 +67,7 @@ export default function Teams() {
         name: newTeam.name.trim(),
         logo_url: newTeam.logo_url.trim() || null
       })
-      .select('*, team_members(profile_id, profiles(id, full_name))')
+      .select('*, team_members(profile_id, profiles(id, full_name, role))')
       .single()
     if (data) setTeams(prev => [...prev, data])
     setNewTeam({ name: '', logo_url: '' })
@@ -228,17 +247,33 @@ export default function Teams() {
                       {team.team_members?.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {team.team_members.map(m => (
-                            <div key={m.profile_id} className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2.5 py-1 rounded-full">
-                              <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-medium">
+                            <div key={m.profile_id} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs px-2.5 py-1.5 rounded-xl shadow-sm group">
+                              <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white text-[10px] font-bold ${m.profiles?.role === 'manager' ? 'bg-amber-500' : 'bg-blue-500'}`}>
                                 {m.profiles?.full_name?.[0]?.toUpperCase()}
                               </div>
-                              {m.profiles?.full_name}
-                              <button
-                                onClick={() => removeMember(team.id, m.profile_id)}
-                                className="ml-0.5 text-blue-400 hover:text-blue-700"
-                              >
-                                <X size={10} />
-                              </button>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-gray-800">{m.profiles?.full_name}</span>
+                                <span className={`text-[9px] uppercase tracking-tighter font-black ${m.profiles?.role === 'manager' ? 'text-amber-600' : 'text-blue-500'}`}>
+                                  {m.profiles?.role === 'manager' ? 'Sub-Owner 👑' : 'Miembro'}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => updateMemberRole(m.profile_id, m.profiles?.role === 'manager' ? 'member' : 'manager')}
+                                  className={`p-1 rounded-md transition-colors ${m.profiles?.role === 'manager' ? 'text-gray-400 hover:text-blue-500 hover:bg-blue-50' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                                  title={m.profiles?.role === 'manager' ? 'Quitar Sub-Owner' : 'Hacer Sub-Owner'}
+                                >
+                                  {m.profiles?.role === 'manager' ? <Users size={12} /> : <Shield size={12} />}
+                                </button>
+                                <button
+                                  onClick={() => removeMember(team.id, m.profile_id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                  title="Eliminar del equipo"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
