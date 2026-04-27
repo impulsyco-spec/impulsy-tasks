@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { extractTasksFromTranscript } from '../lib/claude'
-import { FileText, Sparkles, ChevronRight, X, Check, Edit2, Trash2 } from 'lucide-react'
+import { FileText, Sparkles, ChevronRight, X, Check, Edit2, Trash2, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Transcripts() {
