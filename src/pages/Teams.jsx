@@ -116,7 +116,7 @@ export default function Teams() {
           />
           <input
             type="text"
-            placeholder="URL del Logo (opcional)"
+            placeholder="Logo (ej: logo-kp.png)"
             value={newTeam.logo_url}
             onChange={e => setNewTeam(prev => ({ ...prev, logo_url: e.target.value }))}
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -185,7 +185,8 @@ export default function Teams() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Logo del equipo</label>
+                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-0.5">Logo del equipo</label>
+                          <p className="text-[10px] text-gray-400 mb-2">Ingresa el nombre del archivo en /public/logos/</p>
                           {editingLogo === team.id ? (
                             <div className="flex gap-2">
                               <input

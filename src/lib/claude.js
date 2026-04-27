@@ -11,25 +11,31 @@ export async function extractTasksFromTranscript(transcript) {
       messages: [
         {
           role: 'user',
-          content: `Analiza el siguiente transcript de una reunión e identifica absolutamente todas las tareas pendientes o action items mencionados, por más mínimos que sean. Es CRÍTICO que no se escape ningún detalle.
+          content: `Analiza el siguiente transcript de una reunión e identifica ABSOLUTAMENTE TODAS las tareas pendientes, compromisos o action items mencionados, por más mínimos o insignificantes que parezcan. Es VITAL que no se escape ningún detalle.
 
-Para cada tarea, sigue estrictamente esta estructura de redacción para el título:
-"Hacer [acción específica] para [objetivo o destinatario], por medio de [método o herramienta si se menciona]".
+Para cada tarea, sigue ESTRICTAMENTE esta estructura de redacción para el título (No omitas ninguna parte):
+"Hacer [acción específica] para [objetivo, proyecto o destinatario], por medio de [método, herramienta o recurso si se menciona]".
 
-Ejemplo: "Hacer el diseño del banner para la campaña de mayo, por medio de Figma".
+REGLAS CRÍTICAS:
+1. El título DEBE empezar con un emoji relacionado con la tarea.
+2. El título DEBE seguir la estructura: Hacer X para Y, por medio de Z.
+3. Identifica tareas incluso si son informales (ej: "le enviaré un mensaje a Juan").
+4. Extrae links, documentos o recursos mencionados en el array "resources".
 
-Devuelve ÚNICAMENTE un JSON válido con este formato, incluyendo emojis adecuados en el título:
+Ejemplo: "🎨 Hacer el diseño del banner para la campaña de mayo, por medio de Figma".
+
+Devuelve ÚNICAMENTE un JSON válido con este formato:
 {
   "tasks": [
     {
-      "title": "📌 Título con la estructura solicitada",
-      "description": "Descripción detallada",
+      "title": "Emoji + Título con la estructura: Hacer X para Y, por medio de Z",
+      "description": "Descripción detallada con contexto adicional",
       "due_date": "YYYY-MM-DD o null",
-      "assigned_name": "Nombre o null",
+      "assigned_name": "Nombre de la persona responsable o null",
       "priority": "alta, media o baja",
       "category": "Marketing, Ventas, Diseño, Desarrollo, Legal, Operaciones o null",
       "resources": [
-        {"name": "Nombre del recurso/link", "url": "URL si se menciona"}
+        {"name": "Nombre descriptivo del recurso", "url": "URL exacta mencionada"}
       ]
     }
   ]

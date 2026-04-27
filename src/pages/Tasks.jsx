@@ -8,19 +8,29 @@ import { useNavigate } from 'react-router-dom'
 import { getLogoUrl } from '../lib/utils'
 
 const STATUS_CONFIG = {
-  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  active: { label: 'Activa', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  completed: { label: 'Completada', color: 'bg-green-100 text-green-700 border-green-200' },
-  rejected: { label: 'Rechazada', color: 'bg-red-100 text-red-700 border-red-200' },
+  pending_approval: { label: 'Por aprobar ⏳', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+  active: { label: 'Activa 🔥', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  completed: { label: 'Completada ✅', color: 'bg-green-100 text-green-700 border-green-200' },
+  rejected: { label: 'Rechazada ❌', color: 'bg-red-100 text-red-700 border-red-200' },
 }
 
 const PRIORITY_CONFIG = {
-  alta: { label: 'Alta', color: 'bg-red-50 text-red-700 border-red-100 shadow-sm shadow-red-100/50' },
-  media: { label: 'Media', color: 'bg-yellow-50 text-yellow-700 border-yellow-100 shadow-sm shadow-yellow-100/50' },
-  baja: { label: 'Baja', color: 'bg-slate-50 text-slate-600 border-slate-100' },
+  alta: { label: 'Alta 🔴', color: 'bg-red-50 text-red-700 border-red-100 shadow-sm shadow-red-100/50' },
+  media: { label: 'Media 🟡', color: 'bg-yellow-50 text-yellow-700 border-yellow-100 shadow-sm shadow-yellow-100/50' },
+  baja: { label: 'Baja 🟢', color: 'bg-slate-50 text-slate-600 border-slate-100' },
 }
 
-const CATEGORIES = ['Contenido', 'Anuncios', 'Programacion', 'Diseno', 'Estrategia', 'Redes Sociales', 'Email Marketing', 'SEO', 'Otro']
+const CATEGORIES = [
+  '📱 Contenido', 
+  '📣 Anuncios', 
+  '💻 Programacion', 
+  '🎨 Diseno', 
+  '🧠 Estrategia', 
+  '🌐 Redes Sociales', 
+  '📧 Email Marketing', 
+  '🔍 SEO', 
+  '⚙️ Otro'
+]
 
 export default function Tasks() {
   const navigate = useNavigate()
@@ -54,7 +64,7 @@ export default function Tasks() {
     try {
       let taskQuery = supabase
         .from('tasks')
-        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), teams(id, name, logo_url)')
         .eq('organization_id', profile.organization_id)
       if (profile.role === 'owner' && selectedTeamId) {
         taskQuery = taskQuery.eq('team_id', selectedTeamId)
@@ -214,11 +224,11 @@ export default function Tasks() {
   }
 
   const filters = [
-    { id: 'all', label: 'Todas' },
-    ...(isOwner ? [{ id: 'pending_approval', label: 'Por aprobar' }] : []),
-    { id: 'active', label: 'Activas' },
-    ...(isOwner ? [{ id: 'mine', label: 'Mis tareas' }] : []),
-    { id: 'completed', label: 'Completadas' },
+    { id: 'all', label: 'Todas 🌐' },
+    ...(isOwner ? [{ id: 'pending_approval', label: 'Por aprobar ⏳' }] : []),
+    { id: 'active', label: 'Activas 🔥' },
+    ...(isOwner ? [{ id: 'mine', label: 'Mis tareas ⚡' }] : []),
+    { id: 'completed', label: 'Completadas ✅' },
   ]
 
   if (loading) return (
@@ -241,7 +251,7 @@ export default function Tasks() {
           </div>
           <div className="min-w-0">
             <h2 className="text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              Tareas 🚀
+              Gestión de Tareas 🚀
             </h2>
             <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
               {organization && <span className="text-xs text-gray-400 font-medium truncate">{organization.name}</span>}
@@ -267,22 +277,49 @@ export default function Tasks() {
       </div>
 
       {/* Stage Counters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-yellow-400">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Por aprobar</div>
-          <div className="text-xl font-black text-gray-900">{tasks.filter(t => t.status === 'pending_approval').length}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-yellow-400 group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center">
+              <Clock size={16} />
+            </div>
+            <span className="text-[10px] tracking-widest font-black text-gray-400">PENDIENTES ⏳</span>
+          </div>
+          <div className="text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'pending_approval').length}</div>
+          <p className="text-[10px] text-gray-500 font-medium">Por aprobar ⏳</p>
         </div>
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-blue-500">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Activas</div>
-          <div className="text-xl font-black text-gray-900">{tasks.filter(t => t.status === 'active').length}</div>
+
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-blue-500 group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Plus size={16} className="animate-pulse" />
+            </div>
+            <span className="text-[10px] tracking-widest font-black text-gray-400">ACTIVAS 🔥</span>
+          </div>
+          <div className="text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'active').length}</div>
+          <p className="text-[10px] text-gray-500 font-medium">Tareas activas 🔥</p>
         </div>
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-red-500">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Vencidas</div>
-          <div className="text-xl font-black text-red-600">{tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length}</div>
+
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-red-500 group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+              <Trash2 size={16} />
+            </div>
+            <span className="text-[10px] tracking-widest font-black text-gray-400">VENCIDAS ⚠️</span>
+          </div>
+          <div className="text-2xl font-black text-red-600">{tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length}</div>
+          <p className="text-[10px] text-gray-500 font-medium">Vencidas ⚠️</p>
         </div>
-        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-green-500">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Completadas</div>
-          <div className="text-xl font-black text-gray-900">{tasks.filter(t => t.status === 'completed').length}</div>
+
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-green-500 group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+              <Check size={16} />
+            </div>
+            <span className="text-[10px] tracking-widest font-black text-gray-400">COMPLETADAS ✅</span>
+          </div>
+          <div className="text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'completed').length}</div>
+          <p className="text-[10px] text-gray-500 font-medium">Finalizadas 🏆</p>
         </div>
       </div>
 
@@ -535,19 +572,20 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold text-gray-900">{task.title}</h3>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${cfg.color}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold tracking-wider ${cfg.color}`}>
                   {cfg.label}
                 </span>
                 {task.priority && (
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${PRIORITY_CONFIG[task.priority]?.color}`}>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold tracking-wider ${PRIORITY_CONFIG[task.priority]?.color}`}>
                     Prio: {PRIORITY_CONFIG[task.priority]?.label}
                   </span>
                 )}
                 {isOverdue && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 font-bold uppercase tracking-wider">
-                    Vencida
+                    Vencida ⚠️
                   </span>
                 )}
+
               </div>
               {task.description && (
                 <p className="text-sm text-gray-500 mt-1">{task.description}</p>
@@ -586,6 +624,16 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                         Reunión: {new Date(task.transcripts.meeting_date + 'T00:00:00').toLocaleDateString('es-CO')}
                       </span>
                     )}
+                  </div>
+                )}
+                {task.teams && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md shadow-sm">
+                    {task.teams.logo_url ? (
+                      <img src={getLogoUrl(task.teams.logo_url)} alt="Logo" className="w-5 h-5 object-contain" />
+                    ) : (
+                      <Users size={10} className="text-gray-300" />
+                    )}
+                    <span className="text-[10px] text-gray-600 font-black uppercase tracking-tight">{task.teams.name}</span>
                   </div>
                 )}
               </div>

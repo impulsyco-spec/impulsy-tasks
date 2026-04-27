@@ -7,10 +7,10 @@ import { getLogoUrl } from '../lib/utils'
 import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle, FileText } from 'lucide-react'
 
 const STATUS_LABELS = {
-  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700' },
-  active: { label: 'Activa', color: 'bg-blue-100 text-blue-700' },
-  completed: { label: 'Completada', color: 'bg-green-100 text-green-700' },
-  rejected: { label: 'Rechazada', color: 'bg-red-100 text-red-700' },
+  pending_approval: { label: 'Por aprobar ⏳', color: 'bg-yellow-100 text-yellow-700' },
+  active: { label: 'Activa 🔥', color: 'bg-blue-100 text-blue-700' },
+  completed: { label: 'Completada ✅', color: 'bg-green-100 text-green-700' },
+  rejected: { label: 'Rechazada ❌', color: 'bg-red-100 text-red-700' },
 }
 
 export default function Dashboard() {
@@ -131,7 +131,7 @@ export default function Dashboard() {
           />
         )}
         <StatCard
-          icon={<CheckSquare size={18} />}
+          icon={<Sparkles size={18} />}
           label="Activas"
           value={stats.active}
           color="blue"
@@ -145,7 +145,7 @@ export default function Dashboard() {
           onClick={() => navigate('/tasks?filter=overdue')}
         />
         <StatCard
-          icon={<Circle size={18} />}
+          icon={<CheckSquare size={18} />}
           label="Completadas"
           value={stats.completed}
           color="green"
@@ -157,7 +157,7 @@ export default function Dashboard() {
         {/* Mis tareas */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">Mis tareas</h3>
+            <h3 className="font-semibold text-gray-900">Mis tareas ⚡</h3>
             <button
               onClick={() => navigate('/tasks?filter=mine')}
               className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"

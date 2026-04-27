@@ -286,10 +286,10 @@ export default function Transcripts() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                Tareas identificadas <Sparkles size={16} className="text-blue-500" />
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-lg">
+                📋 Tareas identificadas <Sparkles size={18} className="text-blue-500 animate-pulse" />
               </h3>
-              <p className="text-sm text-gray-500 mt-0.5">Revisa, edita o agrega tareas nuevas</p>
+              <p className="text-sm text-gray-500 mt-1">Revisa, ajusta o agrega lo que haga falta para que no se escape nada 🚀</p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
@@ -378,12 +378,16 @@ export default function Transcripts() {
                           disabled={!isOwner}
                           className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer disabled:cursor-default"
                         >
-                          <option value="">Sin categ.</option>
-                          <option value="Contenido">Contenido</option>
-                          <option value="Anuncios">Anuncios</option>
-                          <option value="Programacion">Prog.</option>
-                          <option value="Diseno">Diseño</option>
-                          <option value="Estrategia">Estrategia</option>
+                          <option value="">📁 Sin categ.</option>
+                          <option value="Contenido">📱 Contenido</option>
+                          <option value="Anuncios">📣 Anuncios</option>
+                          <option value="Programacion">💻 Prog.</option>
+                          <option value="Diseno">🎨 Diseño</option>
+                          <option value="Estrategia">🧠 Estrategia</option>
+                          <option value="Redes Sociales">🌐 Redes</option>
+                          <option value="Email Marketing">📧 Email</option>
+                          <option value="SEO">🔍 SEO</option>
+                          <option value="Otro">⚙️ Otro</option>
                         </select>
                       </div>
                       <div className="flex items-center gap-2 relative">
@@ -481,6 +485,18 @@ export default function Transcripts() {
                 </div>
               </div>
             ))}
+
+            {isOwner && (
+              <button
+                onClick={addNewTask}
+                className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all group"
+              >
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                  <Plus size={18} />
+                </div>
+                <span className="font-bold text-sm">Agregar otra tarea que haga falta ✨</span>
+              </button>
+            )}
           </div>
 
           <div className="flex gap-3">

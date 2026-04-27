@@ -38,14 +38,14 @@ export function TeamProvider({ children }) {
     if (profile?.role === 'owner') {
       const { data } = await supabase
         .from('teams')
-        .select('id, name')
+        .select('id, name, logo_url')
         .eq('organization_id', profile.organization_id)
         .order('name')
       setTeams(data || [])
     } else {
       const { data } = await supabase
         .from('team_members')
-        .select('teams(id, name)')
+        .select('teams(id, name, logo_url)')
         .eq('profile_id', profile.id)
       setTeams(data?.map(m => m.teams).filter(Boolean) || [])
     }
