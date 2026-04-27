@@ -41,18 +41,26 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     if (!profile) return
-    supabase
-      .from('notifications')
-      .select('id', { count: 'exact' })
-      .eq('user_id', profile.id)
-      .eq('read', false)
-      .then(({ count }) => setUnread(count || 0))
+
+    const fetchCount = () => {
+      supabase
+        .from('notifications')
+        .select('id', { count: 'exact' })
+        .eq('user_id', profile.id)
+        .eq('read', false)
+        .then(({ count }) => setUnread(count || 0))
+    }
+
+    fetchCount()
 
     const channel = supabase
-      .channel('notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}` },
-        () => setUnread(n => n + 1)
-      )
+      .channel('notifications-count')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'notifications', 
+        filter: `user_id=eq.${profile.id}` 
+      }, fetchCount)
       .subscribe()
 
     return () => supabase.removeChannel(channel)

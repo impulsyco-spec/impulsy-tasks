@@ -73,18 +73,8 @@ export default function Tasks() {
           taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
         }
       } else {
-        // Miembros ven tareas de sus equipos O tareas asignadas a ellos
-        const { data: memberTeams } = await supabase
-          .from('team_members')
-          .select('team_id')
-          .eq('profile_id', profile.id)
-        
-        const teamIds = memberTeams?.map(mt => mt.team_id) || []
-        if (teamIds.length > 0) {
-          taskQuery = taskQuery.or(`team_id.in.(${teamIds.join(',')}),assigned_to.eq.${profile.id}`)
-        } else {
-          taskQuery = taskQuery.eq('assigned_to', profile.id)
-        }
+        // Los miembros normales SOLO ven las tareas que tienen asignadas directamente
+        taskQuery = taskQuery.eq('assigned_to', profile.id)
       }
 
       const [taskResult, memberResult] = await Promise.all([
