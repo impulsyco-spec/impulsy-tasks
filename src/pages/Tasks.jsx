@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTeam } from '../context/TeamContext'
-import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag, FileText, Users } from 'lucide-react'
+import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag, FileText, Users, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getLogoUrl } from '../lib/utils'
 
