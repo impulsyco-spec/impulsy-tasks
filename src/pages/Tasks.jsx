@@ -65,12 +65,13 @@ export default function Tasks() {
     try {
       let taskQuery = supabase
         .from('tasks')
-        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)')
+        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
         .eq('organization_id', profile.organization_id)
-      if (selectedTeamId) {
+
+      if (selectedTeamId && profile?.id) {
         // Si hay un equipo seleccionado, mostrar tareas de ese equipo O tareas asignadas a mí
         taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
-      } else if (!isOwner && !isManager) {
+      } else if (!isOwner && !isManager && profile?.id) {
         // Si no hay equipo seleccionado y no es owner/manager, solo ve sus tareas
         taskQuery = taskQuery.eq('assigned_to', profile.id)
       }
@@ -116,8 +117,9 @@ export default function Tasks() {
       setOrganization(orgData)
       setTasks(enrichedTasks)
       setMembers(memberResult.data || [])
+      console.log('Tasks fetched successfully:', enrichedTasks.length)
     } catch (err) {
-      console.error('Error fetching tasks:', err)
+      console.error('Error fetching tasks details:', err)
       setTasks([])
       setMembers([])
     } finally {
@@ -644,14 +646,21 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                     )}
                   </div>
                 )}
-                {task.team && (
+                {task.team_id && (
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white border border-slate-200 rounded-md shadow-sm ml-auto">
-                    {task.team.logo_url ? (
-                      <img src={getLogoUrl(task.team.logo_url)} alt="Logo" className="w-4 h-4 object-contain" />
-                    ) : (
-                      <Users size={10} className="text-gray-300" />
-                    )}
-                    <span className="text-[10px] text-slate-700 font-bold uppercase tracking-tight">{task.team.name}</span>
+                    {(() => {
+                      const team = teams.find(t => t.id === task.team_id)
+                      return team ? (
+                        <>
+                          {team.logo_url ? (
+                            <img src={getLogoUrl(team.logo_url)} alt="Logo" className="w-4 h-4 object-contain" />
+                          ) : (
+                            <Users size={10} className="text-gray-300" />
+                          )}
+                          <span className="text-[10px] text-slate-700 font-bold uppercase tracking-tight">{team.name}</span>
+                        </>
+                      ) : null
+                    })()}
                   </div>
                 )}
               </div>

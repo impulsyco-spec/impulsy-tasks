@@ -38,13 +38,15 @@ export default function Dashboard() {
       .eq('organization_id', profile.organization_id)
     
     if (selectedTeamId) {
-      query = query.eq('team_id', selectedTeamId)
+      query = query.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
     } else if (!isOwner && !isManager) {
-      query = query.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
+      query = query.eq('assigned_to', profile.id)
     }
-    const { data: tasks } = await query.order('created_at', { ascending: false })
+    const { data: tasks, error: taskError } = await query.order('created_at', { ascending: false })
+    if (taskError) console.error('Error fetching dashboard tasks:', taskError)
 
     if (tasks) {
+      console.log('Dashboard tasks fetched:', tasks.length)
       if (profile.role === 'owner' || profile.role === 'manager') {
         setStats({
           pending: tasks.filter(t => t.status === 'pending_approval').length,
