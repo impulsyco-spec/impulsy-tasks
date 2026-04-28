@@ -25,6 +25,14 @@ function OwnerRoute({ children }) {
   return children
 }
 
+function OwnerOnlyRoute({ children }) {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando...</div>
+  if (!user) return <Navigate to="/" replace />
+  if (profile?.role !== 'owner') return <Navigate to="/dashboard" replace />
+  return children
+}
+
 export default function App() {
   const { user, loading } = useAuth()
   const [showRegister, setShowRegister] = useState(false)
@@ -52,7 +60,7 @@ export default function App() {
         <Route path="/transcripts" element={<OwnerRoute><Transcripts /></OwnerRoute>} />
         <Route path="/tasks" element={<PrivateRoute><Tasks /></PrivateRoute>} />
         <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
-        <Route path="/teams" element={<OwnerRoute><Teams /></OwnerRoute>} />
+        <Route path="/teams" element={<OwnerOnlyRoute><Teams /></OwnerOnlyRoute>} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

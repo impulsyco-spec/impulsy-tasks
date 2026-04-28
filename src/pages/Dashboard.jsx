@@ -278,19 +278,21 @@ export default function Dashboard() {
                 <ArrowRight size={14} className="text-gray-300 ml-auto group-hover:text-yellow-500 transition-colors" />
               </button>
 
-              <button
-                onClick={() => navigate('/teams')}
-                className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm group"
-              >
-                <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <CheckSquare size={17} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Gestionar equipos</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Asignar miembros</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-300 ml-auto group-hover:text-blue-500 transition-colors" />
-              </button>
+              {profile?.role === 'owner' && (
+                <button
+                  onClick={() => navigate('/teams')}
+                  className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm group"
+                >
+                  <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <CheckSquare size={17} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Gestionar equipos</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Asignar miembros</p>
+                  </div>
+                  <ArrowRight size={14} className="text-gray-300 ml-auto group-hover:text-blue-500 transition-colors" />
+                </button>
+              )}
             </>
           )}
         </div>

@@ -85,7 +85,7 @@ export default function Layout({ children }) {
     { to: '/transcripts', icon: FileText, label: 'Transcripts' },
     { to: '/tasks', icon: CheckSquare, label: 'Tareas' },
     { to: '/notifications', icon: Bell, label: 'Notificaciones', badge: unread },
-    ...(isOwner || isManager ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
+    ...(isOwner ? [{ to: '/teams', icon: Users, label: 'Equipos' }] : []),
   ]
 
   const initials = profile?.full_name
