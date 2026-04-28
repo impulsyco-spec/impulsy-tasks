@@ -6,6 +6,7 @@ import { useTeam } from '../context/TeamContext'
 import { Check, X, Edit2, ChevronDown, User, Calendar, Plus, Trash2, Flag, Tag, FileText, Users, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getLogoUrl } from '../lib/utils'
+const SCRIPT_SEPARATOR = '\n\n--- GUION/MATERIAL ---\n'
 
 const STATUS_CONFIG = {
   pending_approval: { label: 'Por aprobar ⏳', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
@@ -44,7 +45,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true)
   const [editingTask, setEditingTask] = useState(null)
   const [showNewTask, setShowNewTask] = useState(false)
-  const [newTask, setNewTask] = useState({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
+  const [newTask, setNewTask] = useState({ title: '', description: '', script: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
   const [organization, setOrganization] = useState(null)
   const [saving, setSaving] = useState(false)
 
@@ -169,7 +170,7 @@ export default function Tasks() {
     setSaving(true)
     await supabase.from('tasks').update({
       title: task.title,
-      description: task.description,
+      description: task.script ? `${task.description}${SCRIPT_SEPARATOR}${task.script}` : task.description,
       due_date: task.due_date || null,
       assigned_to: task.assigned_to || null,
       resources: task.resources || [],
@@ -201,7 +202,7 @@ export default function Tasks() {
         team_id: selectedTeamId || null,
         created_by: profile?.id,
         title: newTask.title,
-        description: newTask.description,
+        description: newTask.script ? `${newTask.description}${SCRIPT_SEPARATOR}${newTask.script}` : newTask.description,
         due_date: newTask.due_date || null,
         assigned_to: newTask.assigned_to || null,
         priority: newTask.priority,
@@ -211,7 +212,7 @@ export default function Tasks() {
       }).select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
       if (error) throw error
       if (data) setTasks(prev => [{ ...data, transcripts: null }, ...prev])
-      setNewTask({ title: '', description: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
+      setNewTask({ title: '', description: '', script: '', due_date: '', assigned_to: '', priority: 'media', category: '' })
       setShowNewTask(false)
     } catch (err) {
       console.error('Error creating task:', err)
@@ -311,10 +312,23 @@ export default function Tasks() {
                   <textarea
                     value={newTask.description}
                     onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[100px]"
-                    placeholder="Detalles de la tarea..."
+                    rows={2}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                    placeholder="Descripción de la tarea..."
                   />
                 </div>
+                {(isOwner || isManager) && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Guion / Material de trabajo</label>
+                    <textarea
+                      value={newTask.script}
+                      onChange={e => setNewTask({ ...newTask, script: e.target.value })}
+                      rows={3}
+                      className="w-full bg-blue-50/30 border border-blue-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none font-mono"
+                      placeholder="Agrega el guion, links o material específico aquí..."
+                    />
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -391,7 +405,11 @@ export default function Tasks() {
               isManager={isManager}
               today={today}
               teams={teams}
-              editing={editingTask?.id === task.id ? editingTask : null}
+              editing={editingTask?.id === task.id ? {
+                ...editingTask,
+                description: (editingTask.description || '').split(SCRIPT_SEPARATOR)[0],
+                script: (editingTask.description || '').split(SCRIPT_SEPARATOR)[1] || ''
+              } : null}
               onEdit={() => setEditingTask({ ...task })}
               onEditChange={updates => setEditingTask(prev => ({ ...prev, ...updates }))}
               onSaveEdit={() => saveEdit(editingTask)}
@@ -431,6 +449,18 @@ function TaskCard({ task, members, isOwner, isManager, today, teams, editing, on
             className="w-full text-sm text-gray-600 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
             placeholder="Descripción..."
           />
+          {(isOwner || isManager) && (
+            <div className="bg-blue-50/30 p-3 rounded-lg border border-blue-100">
+              <label className="block text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">Guion / Material de trabajo</label>
+              <textarea
+                value={editing.script || ''}
+                onChange={e => onEditChange({ script: e.target.value })}
+                rows={4}
+                className="w-full text-sm text-gray-800 bg-transparent focus:outline-none resize-none font-mono"
+                placeholder="Agrega el material aquí..."
+              />
+            </div>
+          )}
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-xs text-gray-500">Vencimiento</label>
@@ -541,9 +571,36 @@ function TaskCard({ task, members, isOwner, isManager, today, teams, editing, on
                 )}
 
               </div>
-              {task.description && (
-                <p className="text-sm text-gray-500 mt-1">{task.description}</p>
-              )}
+              {(() => {
+                const parts = (task.description || '').split(SCRIPT_SEPARATOR)
+                const desc = parts[0]
+                const script = parts[1]
+                return (
+                  <>
+                    {desc && <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{desc}</p>}
+                    {script && (
+                      <div className="mt-3 bg-blue-50 rounded-lg border border-blue-100 overflow-hidden">
+                        <div className="bg-blue-100/50 px-3 py-1 border-b border-blue-100 flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Material de trabajo / Guion</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigator.clipboard.writeText(script)
+                              alert('Copiado al portapapeles')
+                            }}
+                            className="text-[10px] text-blue-600 hover:text-blue-800 font-bold"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                        <div className="p-3 text-sm text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">
+                          {script}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-400">
                 {task.assigned_profile ? (
                   <span className="flex items-center gap-1">
