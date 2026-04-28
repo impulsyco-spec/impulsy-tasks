@@ -65,19 +65,19 @@ export default function Tasks() {
     try {
       let taskQuery = supabase
         .from('tasks')
-        .select('*')
-        .eq('organization_id', profile.organization_id)
+        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+        .eq('organization_id', profile?.organization_id)
 
       if (selectedTeamId && profile?.id) {
         // Si hay un equipo seleccionado, mostrar tareas de ese equipo O tareas asignadas a mí
-        taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
+        taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile?.id}`)
       } else if (!isOwner && !isManager && profile?.id) {
         // Si no hay equipo seleccionado y no es owner/manager, ver tareas de SUS equipos o asignadas a él
-        const myTeamIds = teams.map(t => t.id)
+        const myTeamIds = (teams || []).map(t => t.id)
         if (myTeamIds.length > 0) {
-          taskQuery = taskQuery.or(`team_id.in.(${myTeamIds.join(',')}),assigned_to.eq.${profile.id}`)
+          taskQuery = taskQuery.or(`team_id.in.(${myTeamIds.join(',')}),assigned_to.eq.${profile?.id}`)
         } else {
-          taskQuery = taskQuery.eq('assigned_to', profile.id)
+          taskQuery = taskQuery.eq('assigned_to', profile?.id)
         }
       }
 
@@ -142,7 +142,7 @@ export default function Tasks() {
   function filtered() {
     if (filterParam === 'all') return tasks
     if (filterParam === 'overdue') return tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today)
-    if (filterParam === 'mine') return tasks.filter(t => t.assigned_to === profile.id)
+    if (filterParam === 'mine') return tasks.filter(t => t.assigned_to === profile?.id)
     return tasks.filter(t => t.status === filterParam)
   }
 
@@ -616,10 +616,15 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
                 <p className="text-sm text-gray-500 mt-1">{task.description}</p>
               )}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-400">
-                {task.assigned_profile && (
+                {task.assigned_profile ? (
                   <span className="flex items-center gap-1">
                     <User size={11} />
                     {task.assigned_profile.full_name}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-slate-400 italic">
+                    <User size={11} />
+                    Sin asignar
                   </span>
                 )}
                 {task.due_date && (
