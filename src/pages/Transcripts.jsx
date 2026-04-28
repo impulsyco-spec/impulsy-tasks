@@ -230,7 +230,7 @@ export default function Transcripts() {
   }
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl">
+    <div className="p-3 lg:p-8 max-w-5xl">
       <div className="flex items-center justify-between mb-6 gap-3">
         <div className="min-w-0">
           <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Transcripts</h2>

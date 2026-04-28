@@ -37,7 +37,7 @@ export default function Dashboard() {
       .select('*')
       .eq('organization_id', profile.organization_id)
     
-    if ((isOwner || isManager) && selectedTeamId) {
+    if (selectedTeamId) {
       query = query.eq('team_id', selectedTeamId)
     } else if (!isOwner && !isManager) {
       query = query.eq('assigned_to', profile.id).in('status', ['active', 'completed'])
@@ -100,11 +100,11 @@ export default function Dashboard() {
   const activeTeam = teams.find(t => t.id === selectedTeamId)
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl">
+    <div className="p-3 lg:p-8 max-w-5xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+          <div className="w-10 h-10 lg:w-16 lg:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
             {activeTeam?.logo_url || profile?.organizations?.logo_url ? (
               <img src={getLogoUrl(activeTeam?.logo_url || profile?.organizations?.logo_url)} alt="Logo" className="w-full h-full object-contain" />
             ) : (
@@ -112,7 +112,7 @@ export default function Dashboard() {
             )}
           </div>
           <div className="min-w-0">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+            <h1 className="text-xl lg:text-3xl font-bold text-gray-900 truncate">
               {greeting}, {firstName} 👋
             </h1>
             <p className="text-gray-500 text-sm lg:text-base truncate">
@@ -306,7 +306,7 @@ function StatCard({ icon, label, value, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`bg-white rounded-2xl p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
+      className={`bg-white rounded-2xl p-3 lg:p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
     >
       <div className={`w-9 h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-3`}>
         {icon}

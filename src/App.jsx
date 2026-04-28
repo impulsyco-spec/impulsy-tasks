@@ -9,7 +9,6 @@ import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
 import Teams from './pages/Teams'
 import Guide from './pages/Guide'
-import GamificationPreview from './pages/GamificationPreview'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -54,7 +53,7 @@ export default function App() {
         <Route path="/tasks" element={<PrivateRoute><Tasks /></PrivateRoute>} />
         <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
         <Route path="/teams" element={<OwnerRoute><Teams /></OwnerRoute>} />
-        <Route path="/gamification-preview" element={<GamificationPreview />} />
+
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>

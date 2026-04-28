@@ -67,13 +67,11 @@ export default function Tasks() {
         .from('tasks')
         .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name), team:teams(id, name, logo_url)')
         .eq('organization_id', profile.organization_id)
-      if (isOwner || isManager) {
-        if (selectedTeamId) {
-          // Si hay un equipo seleccionado, mostrar tareas de ese equipo O tareas asignadas a mí
-          taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
-        }
-      } else {
-        // Los miembros normales SOLO ven las tareas que tienen asignadas directamente
+      if (selectedTeamId) {
+        // Si hay un equipo seleccionado, mostrar tareas de ese equipo O tareas asignadas a mí
+        taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
+      } else if (!isOwner && !isManager) {
+        // Si no hay equipo seleccionado y no es owner/manager, solo ve sus tareas
         taskQuery = taskQuery.eq('assigned_to', profile.id)
       }
 
@@ -259,7 +257,7 @@ export default function Tasks() {
   )
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl">
+    <div className="p-3 lg:p-8 max-w-5xl">
       <div className="flex items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
@@ -297,48 +295,48 @@ export default function Tasks() {
       </div>
 
       {/* Stage Counters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-yellow-400 group hover:shadow-md transition-all">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 mb-6">
+        <div className="bg-white p-3 lg:p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-yellow-400 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-2">
             <div className="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center">
               <Clock size={16} />
             </div>
             <span className="text-[10px] tracking-widest font-black text-gray-400">PENDIENTES ⏳</span>
           </div>
-          <div className="text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'pending_approval').length}</div>
+          <div className="text-xl lg:text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'pending_approval').length}</div>
           <p className="text-[10px] text-gray-500 font-medium">Por aprobar ⏳</p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-blue-500 group hover:shadow-md transition-all">
+        <div className="bg-white p-3 lg:p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-blue-500 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-2">
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <Plus size={16} className="animate-pulse" />
             </div>
             <span className="text-[10px] tracking-widest font-black text-gray-400">ACTIVAS 🔥</span>
           </div>
-          <div className="text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'active').length}</div>
+          <div className="text-xl lg:text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'active').length}</div>
           <p className="text-[10px] text-gray-500 font-medium">Tareas activas 🔥</p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-red-500 group hover:shadow-md transition-all">
+        <div className="bg-white p-3 lg:p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-red-500 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-2">
             <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
               <Trash2 size={16} />
             </div>
             <span className="text-[10px] tracking-widest font-black text-gray-400">VENCIDAS ⚠️</span>
           </div>
-          <div className="text-2xl font-black text-red-600">{tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length}</div>
+          <div className="text-xl lg:text-2xl font-black text-red-600">{tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today).length}</div>
           <p className="text-[10px] text-gray-500 font-medium">Vencidas ⚠️</p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-green-500 group hover:shadow-md transition-all">
+        <div className="bg-white p-3 lg:p-4 rounded-2xl border border-gray-100 shadow-sm border-b-4 border-b-green-500 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-2">
             <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
               <Check size={16} />
             </div>
             <span className="text-[10px] tracking-widest font-black text-gray-400">COMPLETADAS ✅</span>
           </div>
-          <div className="text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'completed').length}</div>
+          <div className="text-xl lg:text-2xl font-black text-gray-900">{tasks.filter(t => t.status === 'completed').length}</div>
           <p className="text-[10px] text-gray-500 font-medium">Finalizadas 🏆</p>
         </div>
       </div>
@@ -481,7 +479,7 @@ function TaskCard({ task, members, isOwner, today, editing, onEdit, onEditChange
   const cfg = STATUS_CONFIG[task.status] || { label: task.status, color: 'bg-gray-100 text-gray-700 border-gray-200' }
 
   return (
-    <div className={`bg-white rounded-xl border p-4 lg:p-5 transition-shadow hover:shadow-sm ${isOverdue ? 'border-red-200' : 'border-gray-200'}`}>
+    <div className={`bg-white rounded-xl border p-3 lg:p-5 transition-shadow hover:shadow-sm ${isOverdue ? 'border-red-200' : 'border-gray-200'}`}>
       {editing ? (
         <div className="space-y-3">
           <input

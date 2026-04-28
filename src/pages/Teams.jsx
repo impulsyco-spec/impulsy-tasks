@@ -118,7 +118,7 @@ export default function Teams() {
   )
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl">
+    <div className="p-3 lg:p-8 max-w-5xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Equipos</h2>
       </div>
