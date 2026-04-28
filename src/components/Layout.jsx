@@ -189,7 +189,7 @@ export default function Layout({ children }) {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0D1F3C] flex-shrink-0">
+        <header className="lg:hidden flex items-center justify-between px-4 py-2 bg-[#0D1F3C] flex-shrink-0">
           <Logo size="sm" dark />
           <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1 relative">
             <Menu size={22} />
@@ -224,7 +224,7 @@ export default function Layout({ children }) {
                   </span>
                 )}
               </div>
-              <span>{label}</span>
+              <span>{label === 'Notificaciones' ? 'Notif.' : label === 'Transcripts' ? 'Reuniones' : label}</span>
             </NavLink>
           ))}
         </nav>

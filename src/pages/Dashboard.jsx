@@ -119,18 +119,15 @@ export default function Dashboard() {
             )}
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl lg:text-3xl font-bold text-gray-900 truncate">
+            <h1 className="text-xl lg:text-3xl font-bold text-gray-900 truncate leading-tight">
               {greeting}, {firstName} 👋
             </h1>
-            <p className="text-gray-500 text-sm lg:text-base truncate">
-              {activeTeam ? activeTeam.name : profile?.organizations?.name || 'Impulsy Tasks'}
-            </p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
+      <div className="grid grid-cols-2 gap-2 lg:gap-4 mb-6 lg:mb-8">
         {(profile?.role === 'owner' || profile?.role === 'manager') && (
           <StatCard
             icon={<Clock size={18} />}
@@ -313,13 +310,13 @@ function StatCard({ icon, label, value, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`bg-white rounded-2xl p-3 lg:p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
+      className={`bg-white rounded-2xl p-2.5 lg:p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
     >
-      <div className={`w-9 h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-3`}>
+      <div className={`w-8 h-8 lg:w-9 lg:h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-2 lg:mb-3`}>
         {icon}
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{label}</p>
+      <p className="text-2xl lg:text-3xl font-bold text-gray-900">{value}</p>
+      <p className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1">{label}</p>
     </button>
   )
 }
