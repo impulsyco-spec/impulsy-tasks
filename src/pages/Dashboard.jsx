@@ -104,19 +104,21 @@ export default function Dashboard() {
   const firstName = profile?.full_name?.split(' ')[0]
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches'
-  const activeTeam = teams.find(t => t.id === selectedTeamId)
+  const activeTeam = (teams || []).find(t => t.id === selectedTeamId)
 
   return (
-    <div className="p-3 lg:p-8 max-w-5xl">
+    <div className="w-full max-w-5xl mx-auto px-4 py-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 gap-4">
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="w-10 h-10 lg:w-16 lg:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
-            {activeTeam?.logo_url || profile?.organizations?.logo_url ? (
-              <img src={getLogoUrl(activeTeam?.logo_url || profile?.organizations?.logo_url)} alt="Logo" className="w-full h-full object-contain" />
-            ) : (
-              <Sparkles size={24} className="text-blue-500" />
-            )}
+      <div className="mb-6 lg:mb-10">
+        <div className="flex items-center gap-3 lg:gap-5">
+          <div className="relative flex-shrink-0">
+            <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm">
+              {activeTeam?.logo_url || profile?.organizations?.logo_url ? (
+                <img src={getLogoUrl(activeTeam?.logo_url || profile?.organizations?.logo_url)} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <Sparkles size={24} className="text-blue-500" />
+              )}
+            </div>
           </div>
           <div className="min-w-0">
             <h1 className="text-xl lg:text-3xl font-bold text-gray-900 truncate leading-tight">
@@ -163,7 +165,7 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-3 lg:gap-4">
         {/* Mis tareas */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-4 lg:px-6 py-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Mis tareas ⚡</h3>
             <button
               onClick={() => navigate('/tasks?filter=mine')}
@@ -189,7 +191,7 @@ export default function Dashboard() {
                   <div
                     key={task.id}
                     onClick={() => navigate('/tasks')}
-                    className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="flex items-center gap-3 lg:gap-4 px-4 lg:px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOverdue ? 'bg-red-400' : task.priority === 'alta' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-blue-400'}`} />
                     <div className="flex-1 min-w-0">
@@ -315,7 +317,7 @@ function StatCard({ icon, label, value, color, onClick }) {
       <div className={`w-8 h-8 lg:w-9 lg:h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-2 lg:mb-3`}>
         {icon}
       </div>
-      <p className="text-2xl lg:text-3xl font-bold text-gray-900">{value}</p>
+      <p className="text-xl lg:text-3xl font-bold text-gray-900">{value}</p>
       <p className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1">{label}</p>
     </button>
   )

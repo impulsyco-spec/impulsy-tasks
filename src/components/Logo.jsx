@@ -8,11 +8,10 @@ export default function Logo({ size = 'md', dark = false }) {
   const s = sizes[size]
 
   return (
-    <div className="leading-none">
+    <div className="leading-none flex items-baseline gap-1 lg:block">
       <span className={`font-black uppercase tracking-tight ${s.impulsy} ${dark ? 'text-white' : 'text-[#0D1F3C]'}`}>
         IMPULSY
       </span>
-      <br />
       <span className={`font-black uppercase tracking-tight ${s.tasks} text-[#00B4D8]`}>
         TASKS
       </span>

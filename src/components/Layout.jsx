@@ -92,7 +92,7 @@ export default function Layout({ children }) {
     ?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100 overflow-x-hidden">
 
       {/* ── SIDEBAR (desktop) ── */}
       <aside className="hidden lg:flex w-60 bg-[#0D1F3C] flex-col flex-shrink-0">
@@ -186,10 +186,10 @@ export default function Layout({ children }) {
       </aside>
 
       {/* ── MAIN ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full">
 
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-2 bg-[#0D1F3C] flex-shrink-0">
+        <header className="lg:hidden flex items-center justify-between px-4 py-2 bg-[#0D1F3C] flex-shrink-0 w-full max-w-full">
           <Logo size="sm" dark />
           <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1 relative">
             <Menu size={22} />
@@ -207,7 +207,7 @@ export default function Layout({ children }) {
         </main>
 
         {/* ── BOTTOM NAV (mobile) ── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0D1F3C] border-t border-white/10 flex z-40">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0D1F3C] border-t border-white/10 flex z-40 w-full max-w-full">
           {nav.slice(0, 5).map(({ to, icon: Icon, label, badge }) => (
             <NavLink key={to} to={to}
               className={({ isActive }) =>
