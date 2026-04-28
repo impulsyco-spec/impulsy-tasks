@@ -104,7 +104,7 @@ export default function Layout({ children }) {
               {selectedTeamId && teams.find(t => t.id === selectedTeamId)?.logo_url && (
                 <div className="w-8 h-8 rounded bg-white flex-shrink-0 overflow-hidden border border-white/20">
                   <img 
-                    src={getLogoUrl(teams.find(t => t.id === selectedTeamId).logo_url)} 
+                    src={getLogoUrl(teams.find(t => t.id === selectedTeamId)?.logo_url)} 
                     alt="Team Logo" 
                     className="w-full h-full object-contain"
                   />

@@ -40,7 +40,12 @@ export default function Dashboard() {
     if (selectedTeamId) {
       query = query.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
     } else if (!isOwner && !isManager) {
-      query = query.eq('assigned_to', profile.id)
+      const myTeamIds = teams.map(t => t.id)
+      if (myTeamIds.length > 0) {
+        query = query.or(`team_id.in.(${myTeamIds.join(',')}),assigned_to.eq.${profile.id}`)
+      } else {
+        query = query.eq('assigned_to', profile.id)
+      }
     }
     const { data: tasks, error: taskError } = await query.order('created_at', { ascending: false })
     if (taskError) console.error('Error fetching dashboard tasks:', taskError)

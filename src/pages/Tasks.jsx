@@ -72,8 +72,13 @@ export default function Tasks() {
         // Si hay un equipo seleccionado, mostrar tareas de ese equipo O tareas asignadas a mí
         taskQuery = taskQuery.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
       } else if (!isOwner && !isManager && profile?.id) {
-        // Si no hay equipo seleccionado y no es owner/manager, solo ve sus tareas
-        taskQuery = taskQuery.eq('assigned_to', profile.id)
+        // Si no hay equipo seleccionado y no es owner/manager, ver tareas de SUS equipos o asignadas a él
+        const myTeamIds = teams.map(t => t.id)
+        if (myTeamIds.length > 0) {
+          taskQuery = taskQuery.or(`team_id.in.(${myTeamIds.join(',')}),assigned_to.eq.${profile.id}`)
+        } else {
+          taskQuery = taskQuery.eq('assigned_to', profile.id)
+        }
       }
 
       const [taskResult, memberResult] = await Promise.all([
