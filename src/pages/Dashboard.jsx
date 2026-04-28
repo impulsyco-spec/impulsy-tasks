@@ -164,8 +164,8 @@ export default function Dashboard() {
 
       <div className="grid lg:grid-cols-3 gap-3 lg:gap-4">
         {/* Mis tareas */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-4 lg:px-6 py-4 border-b border-gray-100">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Mis tareas ⚡</h3>
             <button
               onClick={() => navigate('/tasks?filter=mine')}
@@ -222,7 +222,7 @@ export default function Dashboard() {
 
         {/* Reuniones Recientes & Acciones rápidas */}
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 lg:p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900 text-sm">Reuniones recientes</h3>
               <button onClick={() => navigate('/transcripts')} className="text-[10px] text-blue-600 font-medium">Ver todas</button>
@@ -252,7 +252,7 @@ export default function Dashboard() {
               <h3 className="font-semibold text-gray-900 text-sm px-1">Acciones rápidas</h3>
               <button
                 onClick={() => navigate('/transcripts')}
-                className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl text-left hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm group"
+                className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl text-left hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm group"
               >
                 <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                   <Sparkles size={17} className="text-white" />
@@ -266,9 +266,9 @@ export default function Dashboard() {
 
               <button
                 onClick={() => navigate('/tasks?filter=pending_approval')}
-                className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-yellow-300 hover:bg-yellow-50 transition-all shadow-sm group"
+                className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-yellow-300 hover:bg-yellow-50 transition-all shadow-sm group"
               >
-                <div className="w-9 h-9 rounded-xl bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-xl bg-yellow-100 flex items-center justify-center flex-shrink-0">
                   <Clock size={17} className="text-yellow-600" />
                 </div>
                 <div>
@@ -280,9 +280,9 @@ export default function Dashboard() {
 
               <button
                 onClick={() => navigate('/teams')}
-                className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm group"
+                className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm group"
               >
-                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <CheckSquare size={17} className="text-blue-600" />
                 </div>
                 <div>
@@ -312,13 +312,13 @@ function StatCard({ icon, label, value, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`bg-white rounded-2xl p-2.5 lg:p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
+      className={`bg-white rounded-2xl p-2 lg:p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
     >
-      <div className={`w-8 h-8 lg:w-9 lg:h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-2 lg:mb-3`}>
+      <div className={`w-7 h-7 lg:w-9 lg:h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-1.5 lg:mb-3`}>
         {icon}
       </div>
-      <p className="text-xl lg:text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1">{label}</p>
+      <p className="text-lg lg:text-3xl font-bold text-gray-900 leading-none">{value}</p>
+      <p className="text-[9px] lg:text-xs text-gray-500 mt-1 lg:mt-1 uppercase tracking-tight">{label}</p>
     </button>
   )
 }

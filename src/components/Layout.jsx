@@ -202,7 +202,7 @@ export default function Layout({ children }) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <main className="flex-1 w-full overflow-y-auto pb-20 lg:pb-0">
           {children}
         </main>
 
