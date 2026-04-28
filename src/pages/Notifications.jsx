@@ -93,7 +93,7 @@ export default function Notifications() {
   if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
 
   return (
-    <div className="p-8">
+    <div className="w-full max-w-5xl mx-auto px-4 py-6 lg:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Notificaciones</h2>

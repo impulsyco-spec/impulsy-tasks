@@ -237,7 +237,7 @@ export default function Tasks() {
   )
 
   return (
-    <div className="p-3 lg:p-8 max-w-5xl">
+    <div className="w-full max-w-5xl mx-auto px-4 py-6 lg:p-8">
       <div className="flex items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
