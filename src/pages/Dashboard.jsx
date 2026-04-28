@@ -38,13 +38,13 @@ export default function Dashboard() {
       .eq('organization_id', profile.organization_id)
     
     if (selectedTeamId) {
-      query = query.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile.id}`)
+      query = query.or(`team_id.eq.${selectedTeamId},assigned_to.eq.${profile?.id}`)
     } else if (!isOwner && !isManager) {
-      const myTeamIds = teams.map(t => t.id)
+      const myTeamIds = (teams || []).map(t => t.id)
       if (myTeamIds.length > 0) {
-        query = query.or(`team_id.in.(${myTeamIds.join(',')}),assigned_to.eq.${profile.id}`)
+        query = query.or(`team_id.in.(${myTeamIds.join(',')}),assigned_to.eq.${profile?.id}`)
       } else {
-        query = query.eq('assigned_to', profile.id)
+        query = query.eq('assigned_to', profile?.id)
       }
     }
     const { data: tasks, error: taskError } = await query.order('created_at', { ascending: false })
@@ -67,7 +67,7 @@ export default function Dashboard() {
           completed: tasks.filter(t => t.status === 'completed').length,
         })
       }
-      setMyTasks(tasks.filter(t => t.assigned_to === profile.id && t.status === 'active').sort((a,b) => {
+      setMyTasks(tasks.filter(t => t.assigned_to === profile?.id && t.status === 'active').sort((a,b) => {
         if(a.priority === 'alta' && b.priority !== 'alta') return -1
         if(a.priority !== 'alta' && b.priority === 'alta') return 1
         return 0
