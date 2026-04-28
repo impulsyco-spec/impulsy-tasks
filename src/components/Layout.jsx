@@ -248,12 +248,12 @@ export default function Layout({ children }) {
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded bg-white overflow-hidden border border-white/20">
                         <img 
-                          src={getLogoUrl(teams.find(t => t.id === selectedTeamId).logo_url)} 
+                          src={getLogoUrl(teams.find(t => t.id === selectedTeamId)?.logo_url)} 
                           alt="Team Logo" 
                           className="w-full h-full object-contain"
                         />
                       </div>
-                      <span className="text-white text-sm font-medium">{teams.find(t => t.id === selectedTeamId).name}</span>
+                      <span className="text-white text-sm font-medium">{teams.find(t => t.id === selectedTeamId)?.name}</span>
                     </div>
                   )}
                   <div className="relative">

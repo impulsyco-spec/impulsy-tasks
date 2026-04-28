@@ -65,7 +65,7 @@ export default function Tasks() {
     try {
       let taskQuery = supabase
         .from('tasks')
-        .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+        .select('*')
         .eq('organization_id', profile.organization_id)
 
       if (selectedTeamId && profile?.id) {
