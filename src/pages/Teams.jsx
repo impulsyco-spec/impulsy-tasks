@@ -6,7 +6,9 @@ import { Users, Plus, X, ChevronDown, Shield } from 'lucide-react'
 
 export default function Teams() {
   const { profile } = useAuth()
-  if (profile?.role !== 'owner') return <div className="p-8 text-gray-500 italic">No tienes permisos para gestionar equipos.</div>
+  const isOwner = profile?.role === 'owner'
+  const isManager = profile?.role === 'manager'
+
   const [teams, setTeams] = useState([])
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
