@@ -140,7 +140,7 @@ export default function Tasks() {
   function getLogoUrl(logoUrl, teamName) {
     if (!logoUrl) {
       if (!teamName) return null
-      const name = teamName.toLowerCase()
+      const name = teamName.toLowerCase().replace(/[^a-z0-9]/g, '')
       if (name.includes('upgoing')) return '/logos/logo-upgoing.png'
       if (name.includes('cluenza')) return '/logos/logo-cluenza.png'
       if (name.includes('impulsy')) return '/logos/logo-impulsy.jpg'

@@ -23,7 +23,7 @@ export default function Teams() {
     const [{ data: t }, { data: m }] = await Promise.all([
       supabase
         .from('teams')
-        .select('*, team_members(profile_id, profiles(id, full_name))')
+        .select('*, team_members(profile_id, profiles(id, full_name, role))')
         .eq('organization_id', profile.organization_id)
         .order('created_at'),
       supabase
@@ -44,7 +44,7 @@ export default function Teams() {
     const { data } = await supabase
       .from('teams')
       .insert({ organization_id: profile.organization_id, name: newTeamName.trim() })
-      .select('*, team_members(profile_id, profiles(id, full_name))')
+      .select('*, team_members(profile_id, profiles(id, full_name, role))')
       .single()
     if (data) setTeams(prev => [...prev, data])
     setNewTeamName('')
@@ -81,6 +81,14 @@ export default function Teams() {
     const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', memberId)
     if (!error) {
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m))
+      setTeams(prev => prev.map(t => ({
+        ...t,
+        team_members: t.team_members?.map(tm => 
+          tm.profile_id === memberId 
+            ? { ...tm, profiles: { ...tm.profiles, role: newRole } }
+            : tm
+        )
+      })))
     }
   }
 
@@ -118,7 +126,8 @@ export default function Teams() {
 
   function getLogoUrl(logoUrl, teamName) {
     if (!logoUrl) {
-      const name = teamName.toLowerCase()
+      if (!teamName) return null
+      const name = teamName.toLowerCase().replace(/[^a-z0-9]/g, '')
       if (name.includes('upgoing')) return '/logos/logo-upgoing.png'
       if (name.includes('cluenza')) return '/logos/logo-cluenza.png'
       if (name.includes('impulsy')) return '/logos/logo-impulsy.jpg'
