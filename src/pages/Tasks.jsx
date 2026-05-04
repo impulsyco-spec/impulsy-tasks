@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { Check, X, Edit2, User, Calendar, Plus, Users } from 'lucide-react'
+import { Check, Plus, AlertCircle, Clock, Filter } from 'lucide-react'
+import FilterBar from '../components/FilterBar'
+import TaskCard from '../components/TaskCard'
+import TaskDrawer from '../components/TaskDrawer'
 
 const STATUS_CONFIG = {
-  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  active: { label: 'Activa', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  completed: { label: 'Completada', color: 'bg-green-50 text-green-700 border-green-200' },
-  rejected: { label: 'Rechazada', color: 'bg-red-50 text-red-700 border-red-200' },
+  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
+  active: { label: 'Activa', color: 'bg-[rgb(var(--primary),0.1)] text-[rgb(var(--primary))] border-[rgb(var(--primary),0.2)]' },
+  completed: { label: 'Completada', color: 'bg-green-500/10 text-green-500 border-green-500/20' },
+  rejected: { label: 'Rechazada', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
 }
 
 export default function Tasks() {
@@ -18,10 +21,11 @@ export default function Tasks() {
 
   const [tasks, setTasks] = useState([])
   const [members, setMembers] = useState([])
+  const [teams, setTeams] = useState([])
+  const [selectedTeam, setSelectedTeam] = useState('all')
   const [loading, setLoading] = useState(true)
   const [editingTask, setEditingTask] = useState(null)
   const [showNewTask, setShowNewTask] = useState(false)
-  const [newTask, setNewTask] = useState({ title: '', description: '', due_date: '', assigned_to: '' })
   const [saving, setSaving] = useState(false)
 
   const isAdmin = profile?.role === 'owner' || profile?.role === 'manager'
@@ -33,27 +37,39 @@ export default function Tasks() {
   }, [profile])
 
   async function fetchAll() {
-    const [{ data: t }, { data: m }] = await Promise.all([
+    const [{ data: t }, { data: m }, { data: tm }] = await Promise.all([
       supabase
         .from('tasks')
-        .select('*, teams(name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+        .select('*, teams(id, name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
         .eq('organization_id', profile.organization_id)
         .order('created_at', { ascending: false }),
       supabase
         .from('profiles')
         .select('id, full_name, role')
         .eq('organization_id', profile.organization_id),
+      supabase
+        .from('teams')
+        .select('id, name, logo_url')
+        .eq('organization_id', profile.organization_id)
+        .order('name'),
     ])
     setTasks(t || [])
     setMembers(m || [])
+    setTeams(tm || [])
     setLoading(false)
   }
 
   function filtered() {
-    if (filterParam === 'all') return tasks
-    if (filterParam === 'overdue') return tasks.filter(t => t.status === 'active' && t.due_date && t.due_date < today)
-    if (filterParam === 'mine') return tasks.filter(t => t.assigned_to === profile.id)
-    return tasks.filter(t => t.status === filterParam)
+    let list = tasks
+    // Filtro por equipo
+    if (selectedTeam !== 'all') {
+      list = list.filter(t => t.team_id === selectedTeam)
+    }
+    // Filtro por estado
+    if (filterParam === 'overdue') return list.filter(t => t.status === 'active' && t.due_date && t.due_date < today)
+    if (filterParam === 'mine') return list.filter(t => t.assigned_to === profile.id)
+    if (filterParam !== 'all') return list.filter(t => t.status === filterParam)
+    return list
   }
 
   async function updateStatus(taskId, status) {
@@ -118,177 +134,167 @@ export default function Tasks() {
     setSaving(false)
   }
 
-  async function createTask(e) {
-    e.preventDefault()
-    setSaving(true)
-    const { data } = await supabase.from('tasks').insert({
-      organization_id: profile.organization_id,
-      created_by: profile.id,
-      title: newTask.title,
-      description: newTask.description,
-      due_date: newTask.due_date || null,
-      assigned_to: newTask.assigned_to || null,
-      status: 'pending_approval',
-    }).select('*, teams(name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
+  // Adapter para TaskDrawer
+  function handleDrawerSave(formData) {
+    if (editingTask) {
+      saveEdit({ ...editingTask, ...formData, due_date: formData.fechaVencimiento, assigned_to: formData.asignado })
+    } else {
+      const createDirect = async () => {
+        setSaving(true)
+        const { data } = await supabase.from('tasks').insert({
+          organization_id: profile.organization_id,
+          created_by: profile.id,
+          title: formData.titulo,
+          description: formData.descripcion,
+          due_date: formData.fechaVencimiento || null,
+          assigned_to: formData.asignado || null,
+          status: 'pending_approval',
+        }).select('*, teams(name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
 
-    if (data) setTasks(prev => [data, ...prev])
-    setNewTask({ title: '', description: '', due_date: '', assigned_to: '' })
-    setShowNewTask(false)
-    setSaving(false)
-  }
-
-  function getLogoUrl(logoUrl, teamName) {
-    if (!logoUrl) {
-      if (!teamName) return null
-      const name = teamName.toLowerCase().replace(/[^a-z0-9]/g, '')
-      if (name.includes('upgoing')) return '/logos/logo-upgoing.png'
-      if (name.includes('cluenza')) return '/logos/logo-cluenza.png'
-      if (name.includes('impulsy')) return '/logos/logo-impulsy.jpg'
-      if (name.includes('kp')) return '/logos/logo-kp.png'
-      if (name.includes('velik')) return '/logos/logo-velik.png'
-      if (name.includes('detailing')) return '/logos/jpdetailing.png'
-      if (name.includes('oral')) return '/logos/oralgroup.jpg'
-      return null
+        if (data) setTasks(prev => [data, ...prev])
+        setShowNewTask(false)
+        setSaving(false)
+      }
+      createDirect()
     }
-    return logoUrl
   }
 
-  const filters = [
-    { id: 'all', label: 'Todas' },
-    { id: 'pending_approval', label: 'Por aprobar' },
-    { id: 'active', label: 'Activas' },
-    { id: 'mine', label: 'Mis tareas' },
-    { id: 'completed', label: 'Completadas' },
-  ]
+  function getLogoDisplay(team) {
+    if (!team) return { type: 'text', src: '??' }
+    // Prioridad: logo local por nombre de equipo
+    const name = (team.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+    if (name.includes('upgoing')) return { type: 'img', src: '/logos/logo-upgoing.png' }
+    if (name.includes('cluenza')) return { type: 'img', src: '/logos/logo-cluenza.png' }
+    if (name.includes('impulsy')) return { type: 'img', src: '/logos/logo-impulsy.jpg' }
+    if (name.includes('kp')) return { type: 'img', src: '/logos/logo-kp.png' }
+    if (name.includes('velik')) return { type: 'img', src: '/logos/logo-velik.png' }
+    if (name.includes('detailing')) return { type: 'img', src: '/logos/jpdetailing.png' }
+    if (name.includes('oral')) return { type: 'img', src: '/logos/oralgroup.jpg' }
+    // Fallback: URL de Supabase o iniciales
+    if (team.logo_url) return { type: 'img', src: team.logo_url }
+    return { type: 'text', src: (team.name || '??').slice(0, 2).toUpperCase() }
+  }
 
   if (loading) return (
-    <div className="p-8 flex items-center gap-3 text-gray-400">
-      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-      Cargando...
+    <div className="p-8 flex items-center gap-4 text-[rgb(var(--text-secondary))] font-medium">
+      <div className="w-5 h-5 border-2 border-[rgb(var(--border))] border-t-[rgb(var(--primary))] rounded-full animate-spin" />
+      <span>Sincronizando tareas...</span>
     </div>
   )
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 lg:p-8 max-w-6xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Tareas</h2>
-          <p className="text-gray-500 mt-1 text-sm">Gestiona el flujo de trabajo de tu equipo</p>
+          <h2 className="text-3xl font-black text-white tracking-tight">Tareas</h2>
+          <p className="text-[rgb(var(--text-secondary))] mt-1 font-medium">Gestiona el flujo de trabajo de tu equipo</p>
         </div>
         <button
-          onClick={() => setShowNewTask(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-2xl text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95"
+          onClick={() => { setEditingTask(null); setShowNewTask(true); }}
+          className="flex items-center gap-2 bg-[rgb(var(--primary))] text-black px-6 py-3 rounded-2xl text-sm font-black hover:bg-[#0dd4b8] shadow-lg shadow-[rgb(var(--primary))]/10 transition-all active:scale-95"
         >
-          <Plus size={18} />
+          <Plus size={20} />
           Nueva tarea
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-        {filters.map(f => (
+      {/* Team Selector */}
+      {teams.length > 0 && (
+        <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
           <button
-            key={f.id}
-            onClick={() => setSearchParams({ filter: f.id })}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${
-              filterParam === f.id
-                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+            onClick={() => setSelectedTeam('all')}
+            className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
+              selectedTeam === 'all'
+                ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary),0.3)] text-[rgb(var(--primary))]'
+                : 'border-[rgb(var(--border))] bg-black/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
             }`}
           >
-            {f.label}
+            <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[10px] font-black">
+              ✦
+            </div>
+            Todos los equipos
+            <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
+              selectedTeam === 'all' ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[#1c1c1c] text-[rgb(var(--text-muted))]'
+            }`}>{tasks.length}</span>
           </button>
-        ))}
-      </div>
 
-      {/* New task form */}
-      {showNewTask && (
-        <div className="premium-card p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-          <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Plus size={18} className="text-blue-600" />
-            Nueva tarea manual
-          </h3>
-          <form onSubmit={createTask} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Título de la tarea</label>
-              <input
-                type="text"
-                placeholder="Ej: 🎨 Diseñar nuevas portadas"
-                value={newTask.title}
-                onChange={e => setNewTask(f => ({ ...f, title: e.target.value }))}
-                required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Descripción</label>
-              <textarea
-                placeholder="Detalles adicionales..."
-                value={newTask.description}
-                onChange={e => setNewTask(f => ({ ...f, description: e.target.value }))}
-                rows={2}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all resize-none"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Vencimiento</label>
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
-                    value={newTask.due_date}
-                    onChange={e => setNewTask(f => ({ ...f, due_date: e.target.value }))}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Asignar a</label>
-                <div className="relative">
-                  <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={newTask.assigned_to}
-                    onChange={e => setNewTask(f => ({ ...f, assigned_to: e.target.value }))}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all appearance-none"
-                  >
-                    <option value="">Sin asignar</option>
-                    {members.map(m => (
-                      <option key={m.id} value={m.id}>{m.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button 
-                type="button" 
-                onClick={() => setShowNewTask(false)} 
-                className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700"
+          <div className="w-px h-6 bg-[rgb(var(--border))] flex-shrink-0 mx-1" />
+
+          {teams.map(team => {
+            const logo = getLogoDisplay(team)
+            const count = tasks.filter(t => t.team_id === team.id).length
+            const isActive = selectedTeam === team.id
+            return (
+              <button
+                key={team.id}
+                onClick={() => setSelectedTeam(team.id)}
+                className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
+                  isActive
+                    ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary),0.3)] text-[rgb(var(--primary))]'
+                    : 'border-[rgb(var(--border))] bg-black/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
+                }`}
               >
-                Cancelar
+                {logo.type === 'img' ? (
+                  <img src={logo.src} alt={team.name} className="w-6 h-6 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[9px] font-black text-[rgb(var(--text-muted))]">
+                    {logo.src}
+                  </div>
+                )}
+                {team.name}
+                {count > 0 && (
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
+                    isActive ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[#1c1c1c] text-[rgb(var(--text-muted))]'
+                  }`}>{count}</span>
+                )}
               </button>
-              <button 
-                type="submit" 
-                disabled={saving} 
-                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm active:scale-95"
-              >
-                {saving ? 'Creando...' : 'Crear tarea'}
-              </button>
-            </div>
-          </form>
+            )
+          })}
         </div>
       )}
 
+      {/* FilterBar */}
+      <FilterBar 
+        filtroActivo={filterParam} 
+        onCambiarFiltro={(id) => setSearchParams({ filter: id })} 
+        conteos={{
+          pending_approval: filtered().filter(t => t.status === 'pending_approval').length,
+          active: filtered().filter(t => t.status === 'active').length,
+          overdue: filtered().filter(t => t.status === 'active' && t.due_date && t.due_date < today).length,
+        }}
+      />
+
+      {/* TaskDrawer */}
+      <TaskDrawer 
+        abierto={showNewTask || editingTask !== null}
+        onCerrar={() => { setShowNewTask(false); setEditingTask(null); }}
+        onGuardar={handleDrawerSave}
+        tareaInicial={editingTask ? {
+          titulo: editingTask.title,
+          descripcion: editingTask.description,
+          fechaVencimiento: editingTask.due_date || '',
+          asignado: editingTask.assigned_to || '',
+          categoria: '',
+          prioridad: 'normal'
+        } : null}
+      />
+
       {/* Tasks list */}
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {filtered().length === 0 ? (
-          <div className="premium-card p-16 text-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-              <Check size={24} className="text-gray-300" />
+          <div className="bg-[#0c0c0c] border border-[rgb(var(--border))] rounded-2xl p-20 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[rgb(var(--primary),0.2)] to-transparent" />
+            <div className="w-20 h-20 bg-[rgb(var(--primary),0.05)] rounded-full flex items-center justify-center mx-auto mb-6 border border-[rgb(var(--primary),0.1)]">
+              <Check size={32} className="text-[rgb(var(--primary))]" />
             </div>
-            <p className="text-gray-400 font-medium">No se encontraron tareas</p>
-            <p className="text-xs text-gray-300 mt-1">Prueba con otro filtro o crea una nueva tarea</p>
+            <h3 className="text-white font-black text-xl tracking-tight">Todo despejado</h3>
+            <p className="text-[rgb(var(--text-secondary))] mt-2 font-medium">No se encontraron tareas bajo estos filtros.</p>
+            <button
+              onClick={() => { setSearchParams({ filter: 'all' }); setSelectedTeam('all'); }}
+              className="mt-6 text-[rgb(var(--primary))] text-xs font-black uppercase tracking-widest hover:underline"
+            >
+              Restablecer filtros
+            </button>
           </div>
         ) : (
           filtered().map(task => (
@@ -298,15 +304,10 @@ export default function Tasks() {
               members={members}
               isAdmin={isAdmin}
               today={today}
-              editing={editingTask?.id === task.id ? editingTask : null}
               onEdit={() => setEditingTask({ ...task })}
-              onEditChange={updates => setEditingTask(prev => ({ ...prev, ...updates }))}
-              onSaveEdit={() => saveEdit(editingTask)}
-              onCancelEdit={() => setEditingTask(null)}
               onApprove={() => updateStatus(task.id, 'active')}
               onReject={() => updateStatus(task.id, 'rejected')}
               onComplete={() => updateStatus(task.id, 'completed')}
-              saving={saving}
             />
           ))
         )}
@@ -314,157 +315,3 @@ export default function Tasks() {
     </div>
   )
 }
-
-function TaskCard({ task, members, isAdmin, today, editing, onEdit, onEditChange, onSaveEdit, onCancelEdit, onApprove, onReject, onComplete, saving }) {
-  const isOverdue = task.status === 'active' && task.due_date && task.due_date < today
-  const cfg = STATUS_CONFIG[task.status] || { label: task.status, color: 'bg-gray-50 text-gray-500' }
-
-  return (
-    <div className={`premium-card p-5 group transition-all hover:-translate-y-0.5 ${isOverdue ? 'ring-1 ring-red-100' : ''}`}>
-      {editing ? (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Título</label>
-            <input
-              type="text"
-              value={editing.title}
-              onChange={e => onEditChange({ title: e.target.value })}
-              className="w-full text-sm font-bold bg-transparent border-0 border-b-2 border-blue-100 focus:border-blue-500 focus:outline-none pb-2 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Descripción</label>
-            <textarea
-              value={editing.description || ''}
-              onChange={e => onEditChange({ description: e.target.value })}
-              rows={2}
-              className="w-full text-sm text-gray-600 bg-gray-50 border-0 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all resize-none"
-              placeholder="Descripción..."
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Vencimiento</label>
-              <input
-                type="date"
-                value={editing.due_date || ''}
-                onChange={e => onEditChange({ due_date: e.target.value })}
-                className="w-full text-xs font-semibold bg-gray-50 border-0 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Asignado</label>
-              <select
-                value={editing.assigned_to || ''}
-                onChange={e => onEditChange({ assigned_to: e.target.value })}
-                className="w-full text-xs font-semibold bg-gray-50 border-0 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none"
-              >
-                <option value="">Sin asignar</option>
-                {members.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onCancelEdit} className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-600">
-              Cancelar
-            </button>
-            <button onClick={onSaveEdit} disabled={saving} className="px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95 disabled:opacity-50">
-              Guardar Cambios
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-start gap-4">
-          {/* Team Logo or Icon */}
-          <div className="flex-shrink-0">
-            {getLogoUrl(task.teams?.logo_url, task.teams?.name) ? (
-              <img 
-                src={getLogoUrl(task.teams.logo_url, task.teams.name)} 
-                alt={task.teams.name} 
-                className="w-12 h-12 rounded-2xl object-cover border border-gray-100 shadow-sm"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center text-gray-400">
-                {task.team_id ? <Users size={20} /> : <Check size={20} />}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{task.title}</h3>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${cfg.color}`}>
-                {cfg.label}
-              </span>
-              {isOverdue && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 font-bold uppercase tracking-wider animate-pulse">
-                  Vencida
-                </span>
-              )}
-            </div>
-            
-            {task.description && (
-              <p className="text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">{task.description}</p>
-            )}
-
-            <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              {task.assigned_profile && (
-                <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg">
-                  <User size={10} className="text-gray-400" />
-                  {task.assigned_profile.full_name}
-                </span>
-              )}
-              {task.due_date && (
-                <span className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${isOverdue ? 'bg-red-50 text-red-500' : 'bg-gray-50'}`}>
-                  <Calendar size={10} />
-                  {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es-CO')}
-                </span>
-              )}
-              {task.teams && (
-                <span className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
-                  <Users size={10} />
-                  {task.teams.name}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {isAdmin && task.status === 'pending_approval' && (
-              <>
-                <button onClick={onEdit} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
-                  <Edit2 size={16} />
-                </button>
-                <button onClick={onApprove} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Aprobar">
-                  <Check size={16} />
-                </button>
-                <button onClick={onReject} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Rechazar">
-                  <X size={16} />
-                </button>
-              </>
-            )}
-            {task.status === 'active' && (
-              <>
-                {isAdmin && (
-                  <button onClick={onEdit} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
-                    <Edit2 size={16} />
-                  </button>
-                )}
-                <button onClick={onComplete} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Marcar como completada">
-                  <Check size={16} />
-                </button>
-              </>
-            )}
-            {task.status === 'completed' && isAdmin && (
-               <button onClick={onEdit} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
-                <Edit2 size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-

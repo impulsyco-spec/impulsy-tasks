@@ -4,17 +4,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy: {
-          900: '#0D1F3C',
-          800: '#112347',
-          700: '#163060',
-        },
-        cyan: {
-          brand: '#00B4D8',
-          light: '#E0F7FC',
+        primary: {
+          DEFAULT: '#12fcd9',
+          glow: 'rgba(18, 252, 217, 0.25)',
         },
       },
     },
   },
   plugins: [],
 }
+
