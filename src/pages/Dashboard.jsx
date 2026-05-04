@@ -67,8 +67,25 @@ export default function Dashboard() {
         porAprobar={stats.pending} 
       />
 
-      {/* Stats - MetricsPanel */}
-      <MetricsPanel tareas={myTasks} stats={stats} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <MetricsPanel tareas={myTasks} stats={stats} />
+        
+        {/* Aquí podrían ir otros widgets como Actividad Reciente o Filtros Rápidos */}
+        <div className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-[14px] p-6">
+          <h3 className="text-sm font-bold text-[#f0f0f0] mb-4 flex items-center gap-2">
+            <div className="w-1.5 h-4 bg-[rgb(var(--primary))] rounded-full"></div>
+            Equipos Activos
+          </h3>
+          <div className="space-y-3">
+            {profile?.organizations?.teams?.map(team => (
+              <div key={team.id} className="flex items-center justify-between p-3 rounded-xl bg-[#141414] border border-[#1c1c1c]">
+                <span className="text-xs font-medium text-[#f0f0f0]">{team.name}</span>
+                <span className="text-[10px] text-[#707070]">{team.members?.[0]?.count || 0} miembros</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Mis tareas */}

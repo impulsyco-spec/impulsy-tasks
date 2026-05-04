@@ -184,16 +184,16 @@ export default function Tasks() {
 
   return (
     <div className="p-4 lg:p-8 max-w-6xl mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight">Tareas</h2>
-          <p className="text-[rgb(var(--text-secondary))] mt-1 font-medium">Gestiona el flujo de trabajo de tu equipo</p>
+          <h1 className="text-3xl font-black text-[#f0f0f0] tracking-tight">Tareas</h1>
+          <p className="text-sm text-[#707070]">Gestiona el flujo de trabajo de tu equipo</p>
         </div>
-        <button
+        <button 
           onClick={() => { setEditingTask(null); setShowNewTask(true); }}
-          className="flex items-center gap-2 bg-[rgb(var(--primary))] text-black px-6 py-3 rounded-2xl text-sm font-black hover:bg-[#0dd4b8] shadow-lg shadow-[rgb(var(--primary))]/10 transition-all active:scale-95"
+          className="hidden md:flex bg-[rgb(var(--primary))] text-black text-xs font-black rounded-xl h-[40px] px-6 hover:shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:brightness-110 transition-all items-center gap-2 active:scale-95"
         >
-          <Plus size={20} />
+          <Plus size={18} />
           Nueva tarea
         </button>
       </div>

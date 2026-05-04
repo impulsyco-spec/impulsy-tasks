@@ -11,30 +11,30 @@ export default function WelcomeBanner({ nombre, completadas, total, urgentes, po
         style={{ background: 'radial-gradient(circle, rgba(18,252,217,0.06) 0%, transparent 70%)' }} />
 
       {/* Fila superior */}
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
         <div>
-          <p className="text-xs text-[#707070] font-medium mb-1">
+          <p className="text-[10px] sm:text-xs text-[#707070] font-medium mb-1">
             Hola, {nombre} 👋 — {hoy}
           </p>
-          <p className="text-lg font-bold text-[#f0f0f0] leading-snug">
+          <p className="text-base sm:text-lg font-bold text-[#f0f0f0] leading-tight sm:leading-snug">
             Esta semana solo te faltan{' '}
             <span className="text-[#12fcd9]">{faltantes} {faltantes === 1 ? 'tarea' : 'tareas'}</span>{' '}
             para que sigamos avanzando.
           </p>
         </div>
 
-        <div className="flex gap-5 flex-shrink-0 relative z-10">
+        <div className="flex gap-4 sm:gap-5 flex-shrink-0 relative z-10 w-full sm:w-auto justify-between sm:justify-end">
           <div className="text-right">
-            <p className="text-2xl font-extrabold text-[#ff4545] leading-none">{urgentes}</p>
-            <p className="text-[10px] text-[#404040] uppercase tracking-wider mt-1">Urgentes</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-[#ff4545] leading-none">{urgentes}</p>
+            <p className="text-[9px] sm:text-[10px] text-[#404040] uppercase tracking-wider mt-1">Urgentes</p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-extrabold text-[#f5a623] leading-none">{porAprobar}</p>
-            <p className="text-[10px] text-[#404040] uppercase tracking-wider mt-1">Por aprobar</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-[#f5a623] leading-none">{porAprobar}</p>
+            <p className="text-[9px] sm:text-[10px] text-[#404040] uppercase tracking-wider mt-1">Revisar</p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-extrabold text-[#12fcd9] leading-none">{completadas}/{total}</p>
-            <p className="text-[10px] text-[#404040] uppercase tracking-wider mt-1">Esta semana</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-[#12fcd9] leading-none">{completadas}/{total}</p>
+            <p className="text-[9px] sm:text-[10px] text-[#404040] uppercase tracking-wider mt-1">Avance</p>
           </div>
         </div>
       </div>

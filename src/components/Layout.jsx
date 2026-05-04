@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
-import { Bell, FileText, LogOut } from 'lucide-react'
+import { Bell, FileText, LogOut, LayoutDashboard, ListTodo, Users, Plus } from 'lucide-react'
 import TaskDrawer from './TaskDrawer'
 import Logo from './Logo'
 
@@ -60,16 +60,16 @@ export default function Layout({ children }) {
         
         {/* Izquierda: Logo y Cliente y Tabs */}
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4 border-r border-[rgb(var(--border))] pr-6">
+          <div className="flex items-center gap-4 md:border-r border-[rgb(var(--border))] md:pr-6">
             <Logo size="sm" className="opacity-90 hover:opacity-100 transition-opacity" />
             {profile?.organizations?.name && (
-              <div className="text-[rgb(var(--text-secondary))] text-sm">
+              <div className="hidden md:block text-[rgb(var(--text-secondary))] text-sm">
                 <span className="text-[rgb(var(--text-primary))] font-semibold">{profile.organizations.name}</span>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             {tabs.map((tab) => (
               <NavLink 
                 key={tab.to} 
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
 
         {/* Derecha: Iconos, Avatar y Botón */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 border-r border-[rgb(var(--border))] pr-4">
+          <div className="hidden md:flex items-center gap-1 border-r border-[rgb(var(--border))] pr-4">
             {/* Notificaciones */}
             <NavLink 
               to="/notifications"
@@ -134,12 +134,12 @@ export default function Layout({ children }) {
               <div className="w-7 h-7 bg-[rgb(var(--card))] rounded-lg flex items-center justify-center text-[10px] font-black text-[rgb(var(--primary))] border border-[rgb(var(--border))] group-hover:border-[rgb(var(--primary))/20]">
                 {initials}
               </div>
-              <LogOut size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <LogOut size={14} className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
 
             <button 
               onClick={() => setIsDrawerOpen(true)}
-              className="bg-[rgb(var(--primary))] text-black text-xs font-black rounded-xl h-[36px] px-5 hover:shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:brightness-110 transition-all flex items-center gap-2 active:scale-95"
+              className="hidden md:flex bg-[rgb(var(--primary))] text-black text-xs font-black rounded-xl h-[36px] px-5 hover:shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:brightness-110 transition-all items-center gap-2 active:scale-95"
             >
               <span className="text-lg leading-none">+</span>
               Nueva tarea
@@ -149,9 +149,51 @@ export default function Layout({ children }) {
       </nav>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto p-6 scroll-smooth">
+      <main className="flex-1 overflow-y-auto w-full max-w-6xl mx-auto p-6 pb-24 md:pb-6 scroll-smooth">
         {children}
       </main>
+
+      {/* ── BOTTOM NAV (MOBILE ONLY) ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-[rgb(var(--border))] h-16 z-50 flex items-center justify-around px-4">
+        <NavLink to="/tasks" className={({ isActive }) => `flex flex-col items-center gap-1 transition-all ${isActive ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-muted))]'}`}>
+          <div className={`p-1.5 rounded-lg transition-all ${location.pathname === '/tasks' ? 'bg-[rgb(var(--primary),0.1)]' : ''}`}>
+            <ListTodo size={20} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Tareas</span>
+        </NavLink>
+        
+        <NavLink to="/dashboard" className={({ isActive }) => `flex flex-col items-center gap-1 transition-all ${isActive ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-muted))]'}`}>
+          <div className={`p-1.5 rounded-lg transition-all ${location.pathname === '/dashboard' ? 'bg-[rgb(var(--primary),0.1)]' : ''}`}>
+            <LayoutDashboard size={20} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Métricas</span>
+        </NavLink>
+
+        <NavLink to="/teams" className={({ isActive }) => `flex flex-col items-center gap-1 transition-all ${isActive ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-muted))]'}`}>
+          <div className={`p-1.5 rounded-lg transition-all ${location.pathname === '/teams' ? 'bg-[rgb(var(--primary),0.1)]' : ''}`}>
+            <Users size={20} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Equipo</span>
+        </NavLink>
+
+        <NavLink to="/notifications" className={({ isActive }) => `flex flex-col items-center gap-1 transition-all relative ${isActive ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-muted))]'}`}>
+          <div className={`p-1.5 rounded-lg transition-all ${location.pathname === '/notifications' ? 'bg-[rgb(var(--primary),0.1)]' : ''}`}>
+            <Bell size={20} />
+            {unread > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[rgb(var(--urgent))] rounded-full shadow-[0_0_8px_rgba(var(--urgent),0.5)]"></span>
+            )}
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Avisos</span>
+        </NavLink>
+      </nav>
+
+      {/* ── FLOAT ACTION BUTTON (MOBILE ONLY) ── */}
+      <button 
+        onClick={() => setIsDrawerOpen(true)}
+        className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-[rgb(var(--primary))] text-black rounded-full shadow-[0_4px_20px_rgba(var(--primary),0.4)] flex items-center justify-center z-50 active:scale-90 transition-transform"
+      >
+        <Plus size={28} />
+      </button>
 
       <TaskDrawer 
         abierto={isDrawerOpen} 
