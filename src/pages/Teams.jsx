@@ -116,6 +116,21 @@ export default function Teams() {
     setUploadingLogo(null)
   }
 
+  function getLogoUrl(logoUrl, teamName) {
+    if (!logoUrl) {
+      const name = teamName.toLowerCase()
+      if (name.includes('upgoing')) return '/logos/logo-upgoing.png'
+      if (name.includes('cluenza')) return '/logos/logo-cluenza.png'
+      if (name.includes('impulsy')) return '/logos/logo-impulsy.jpg'
+      if (name.includes('kp')) return '/logos/logo-kp.png'
+      if (name.includes('velik')) return '/logos/logo-velik.png'
+      if (name.includes('detailing')) return '/logos/jpdetailing.png'
+      if (name.includes('oral')) return '/logos/oralgroup.jpg'
+      return null
+    }
+    return logoUrl
+  }
+
   if (loading) return <div className="p-8 text-gray-500 animate-pulse">Cargando equipos...</div>
 
   const isOwner = profile?.role === 'owner'
@@ -175,8 +190,8 @@ export default function Teams() {
                       >
                         <div className="relative group">
                           <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 overflow-hidden group-hover:border-blue-200 transition-colors">
-                            {team.logo_url ? (
-                              <img src={team.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                            {getLogoUrl(team.logo_url, team.name) ? (
+                              <img src={getLogoUrl(team.logo_url, team.name)} alt="Logo" className="w-full h-full object-cover" />
                             ) : (
                               <Users size={20} />
                             )}
@@ -224,17 +239,33 @@ export default function Teams() {
                             {team.team_members?.length > 0 ? (
                               team.team_members.map(m => (
                                 <div key={m.profile_id} className="group flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-xs pl-1 pr-2 py-1 rounded-xl shadow-sm hover:border-blue-200 transition-all">
-                                  <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">
+                                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-[10px] font-bold ${m.profiles?.role === 'manager' ? 'bg-amber-500' : 'bg-blue-600'}`}>
                                     {m.profiles?.full_name?.[0]?.toUpperCase()}
                                   </div>
-                                  <span className="font-semibold">{m.profiles?.full_name}</span>
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold">{m.profiles?.full_name}</span>
+                                    {m.profiles?.role === 'manager' && (
+                                      <span className="text-[8px] text-amber-600 font-bold uppercase tracking-tight -mt-0.5">Sub-Owner 👑</span>
+                                    )}
+                                  </div>
+                                  
                                   {isOwner && (
-                                    <button
-                                      onClick={() => removeMember(team.id, m.profile_id)}
-                                      className="ml-1 text-slate-300 hover:text-red-500 transition-colors"
-                                    >
-                                      <X size={12} />
-                                    </button>
+                                    <div className="flex items-center gap-1 ml-1">
+                                      <button
+                                        onClick={() => updateRole(m.profile_id, m.profiles?.role === 'manager' ? 'member' : 'manager')}
+                                        className={`p-1 rounded-md transition-colors ${m.profiles?.role === 'manager' ? 'text-blue-500 bg-blue-50' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'}`}
+                                        title={m.profiles?.role === 'manager' ? 'Quitar Sub-Owner' : 'Hacer Sub-Owner'}
+                                      >
+                                        {m.profiles?.role === 'manager' ? <ShieldCheck size={12} /> : <Shield size={12} />}
+                                      </button>
+                                      <button
+                                        onClick={() => removeMember(team.id, m.profile_id)}
+                                        className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                                        title="Eliminar del equipo"
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               ))

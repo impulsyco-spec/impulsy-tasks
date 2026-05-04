@@ -137,6 +137,22 @@ export default function Tasks() {
     setSaving(false)
   }
 
+  function getLogoUrl(logoUrl, teamName) {
+    if (!logoUrl) {
+      if (!teamName) return null
+      const name = teamName.toLowerCase()
+      if (name.includes('upgoing')) return '/logos/logo-upgoing.png'
+      if (name.includes('cluenza')) return '/logos/logo-cluenza.png'
+      if (name.includes('impulsy')) return '/logos/logo-impulsy.jpg'
+      if (name.includes('kp')) return '/logos/logo-kp.png'
+      if (name.includes('velik')) return '/logos/logo-velik.png'
+      if (name.includes('detailing')) return '/logos/jpdetailing.png'
+      if (name.includes('oral')) return '/logos/oralgroup.jpg'
+      return null
+    }
+    return logoUrl
+  }
+
   const filters = [
     { id: 'all', label: 'Todas' },
     { id: 'pending_approval', label: 'Por aprobar' },
@@ -361,9 +377,9 @@ function TaskCard({ task, members, isAdmin, today, editing, onEdit, onEditChange
         <div className="flex items-start gap-4">
           {/* Team Logo or Icon */}
           <div className="flex-shrink-0">
-            {task.teams?.logo_url ? (
+            {getLogoUrl(task.teams?.logo_url, task.teams?.name) ? (
               <img 
-                src={task.teams.logo_url} 
+                src={getLogoUrl(task.teams.logo_url, task.teams.name)} 
                 alt={task.teams.name} 
                 className="w-12 h-12 rounded-2xl object-cover border border-gray-100 shadow-sm"
               />
