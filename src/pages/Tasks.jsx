@@ -1,31 +1,21 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Plus, Filter, Search, MoreHorizontal, CheckCircle2, Clock, AlertCircle, ChevronRight, LayoutGrid, List as ListIcon, Calendar as CalendarIcon, User, Tag, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { Check, Plus, AlertCircle, Clock, Filter } from 'lucide-react'
-import FilterBar from '../components/FilterBar'
-import TaskCard from '../components/TaskCard'
 import TaskDrawer from '../components/TaskDrawer'
-
-const STATUS_CONFIG = {
-  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
-  active: { label: 'Activa', color: 'bg-[rgb(var(--primary),0.1)] text-[rgb(var(--primary))] border-[rgb(var(--primary),0.2)]' },
-  completed: { label: 'Completada', color: 'bg-green-500/10 text-green-500 border-green-500/20' },
-  rejected: { label: 'Rechazada', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
-}
 
 export default function Tasks() {
   const { profile } = useAuth()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filterParam = searchParams.get('filter') || 'all'
-
   const [tasks, setTasks] = useState([])
-  const [members, setMembers] = useState([])
   const [teams, setTeams] = useState([])
-  const [selectedTeam, setSelectedTeam] = useState('all')
+  const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [editingTask, setEditingTask] = useState(null)
+  const [viewMode, setViewMode] = useState('grid')
+  const [selectedTeam, setSelectedTeam] = useState('all')
+  const [filterParam, setFilterParam] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
   const [showNewTask, setShowNewTask] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
   const [saving, setSaving] = useState(false)
 
   const isAdmin = profile?.role === 'owner' || profile?.role === 'manager'
@@ -37,21 +27,35 @@ export default function Tasks() {
   }, [profile])
 
   async function fetchAll() {
+    let tasksQuery = supabase
+      .from('tasks')
+      .select('*, teams(id, name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
+      .eq('organization_id', profile.organization_id)
+
+    let teamsQuery = supabase
+      .from('teams')
+      .select('id, name, logo_url')
+      .eq('organization_id', profile.organization_id)
+
+    // RESTRICCIONES DE ROL (RBAC)
+    if (profile.role !== 'owner') {
+      // Subowners y Members solo ven su equipo
+      tasksQuery = tasksQuery.eq('team_id', profile.team_id)
+      teamsQuery = teamsQuery.eq('id', profile.team_id)
+
+      if (profile.role === 'member') {
+        // Members solo ven tareas asignadas a ellos
+        tasksQuery = tasksQuery.eq('assigned_to', profile.id)
+      }
+    }
+
     const [{ data: t }, { data: m }, { data: tm }] = await Promise.all([
-      supabase
-        .from('tasks')
-        .select('*, teams(id, name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)')
-        .eq('organization_id', profile.organization_id)
-        .order('created_at', { ascending: false }),
+      tasksQuery.order('created_at', { ascending: false }),
       supabase
         .from('profiles')
         .select('id, full_name, role')
         .eq('organization_id', profile.organization_id),
-      supabase
-        .from('teams')
-        .select('id, name, logo_url')
-        .eq('organization_id', profile.organization_id)
-        .order('name'),
+      teamsQuery.order('name'),
     ])
     setTasks(t || [])
     setMembers(m || [])
@@ -129,56 +133,25 @@ export default function Tasks() {
       })
     }
 
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...task } : t))
+    await fetchAll()
     setEditingTask(null)
     setSaving(false)
   }
 
-  // Adapter para TaskDrawer
-  function handleDrawerSave(formData) {
-    if (editingTask) {
-      saveEdit({ ...editingTask, ...formData, due_date: formData.fechaVencimiento, assigned_to: formData.asignado })
-    } else {
-      const createDirect = async () => {
-        setSaving(true)
-        const { data } = await supabase.from('tasks').insert({
-          organization_id: profile.organization_id,
-          created_by: profile.id,
-          title: formData.titulo,
-          description: formData.descripcion,
-          due_date: formData.fechaVencimiento || null,
-          assigned_to: formData.asignado || null,
-          status: 'pending_approval',
-        }).select('*, teams(name, logo_url), assigned_profile:profiles!tasks_assigned_to_fkey(id, full_name), creator:profiles!tasks_created_by_fkey(full_name)').single()
-
-        if (data) setTasks(prev => [data, ...prev])
-        setShowNewTask(false)
-        setSaving(false)
-      }
-      createDirect()
-    }
+  async function deleteTask(taskId) {
+    if (!confirm('¿Eliminar esta tarea?')) return
+    await supabase.from('tasks').delete().eq('id', taskId)
+    setTasks(prev => prev.filter(t => t.id !== taskId))
   }
 
   function getLogoDisplay(team) {
-    if (!team) return { type: 'text', src: '??' }
-    // Prioridad: logo local por nombre de equipo
-    const name = (team.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-    if (name.includes('upgoing')) return { type: 'img', src: '/logos/logo-upgoing.png' }
-    if (name.includes('cluenza')) return { type: 'img', src: '/logos/logo-cluenza.png' }
-    if (name.includes('impulsy')) return { type: 'img', src: '/logos/logo-impulsy.jpg' }
-    if (name.includes('kp')) return { type: 'img', src: '/logos/logo-kp.png' }
-    if (name.includes('velik')) return { type: 'img', src: '/logos/logo-velik.png' }
-    if (name.includes('detailing')) return { type: 'img', src: '/logos/jpdetailing.png' }
-    if (name.includes('oral')) return { type: 'img', src: '/logos/oralgroup.jpg' }
-    // Fallback: URL de Supabase o iniciales
     if (team.logo_url) return { type: 'img', src: team.logo_url }
-    return { type: 'text', src: (team.name || '??').slice(0, 2).toUpperCase() }
+    return { type: 'text', text: team.name.substring(0, 2).toUpperCase() }
   }
 
   if (loading) return (
-    <div className="p-8 flex items-center gap-4 text-[rgb(var(--text-secondary))] font-medium">
-      <div className="w-5 h-5 border-2 border-[rgb(var(--border))] border-t-[rgb(var(--primary))] rounded-full animate-spin" />
-      <span>Sincronizando tareas...</span>
+    <div className="flex items-center justify-center h-screen bg-black">
+      <div className="w-8 h-8 border-4 border-[rgb(var(--primary))] border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -198,8 +171,8 @@ export default function Tasks() {
         </button>
       </div>
 
-      {/* Team Selector */}
-      {teams.length > 0 && (
+      {/* Team Selector - Solo visible para OWNER */}
+      {profile?.role === 'owner' && teams.length > 0 && (
         <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
           <button
             onClick={() => setSelectedTeam('all')}
@@ -237,81 +210,80 @@ export default function Tasks() {
                 {logo.type === 'img' ? (
                   <img src={logo.src} alt={team.name} className="w-6 h-6 rounded-lg object-cover" />
                 ) : (
-                  <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[9px] font-black text-[rgb(var(--text-muted))]">
-                    {logo.src}
+                  <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[10px] font-black">
+                    {logo.text}
                   </div>
                 )}
                 {team.name}
-                {count > 0 && (
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
-                    isActive ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[#1c1c1c] text-[rgb(var(--text-muted))]'
-                  }`}>{count}</span>
-                )}
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
+                  isActive ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[#1c1c1c] text-[rgb(var(--text-muted))]'
+                }`}>{count}</span>
               </button>
             )
           })}
         </div>
       )}
 
-      {/* FilterBar */}
-      <FilterBar 
-        filtroActivo={filterParam} 
-        onCambiarFiltro={(id) => setSearchParams({ filter: id })} 
-        conteos={{
-          pending_approval: filtered().filter(t => t.status === 'pending_approval').length,
-          active: filtered().filter(t => t.status === 'active').length,
-          overdue: filtered().filter(t => t.status === 'active' && t.due_date && t.due_date < today).length,
-        }}
-      />
-
-      {/* TaskDrawer */}
-      <TaskDrawer 
-        abierto={showNewTask || editingTask !== null}
-        onCerrar={() => { setShowNewTask(false); setEditingTask(null); }}
-        onGuardar={handleDrawerSave}
-        tareaInicial={editingTask ? {
-          titulo: editingTask.title,
-          descripcion: editingTask.description,
-          fechaVencimiento: editingTask.due_date || '',
-          asignado: editingTask.assigned_to || '',
-          categoria: '',
-          prioridad: 'normal'
-        } : null}
-      />
-
-      {/* Tasks list */}
-      <div className="grid gap-3">
-        {filtered().length === 0 ? (
-          <div className="bg-[#0c0c0c] border border-[rgb(var(--border))] rounded-2xl p-20 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[rgb(var(--primary),0.2)] to-transparent" />
-            <div className="w-20 h-20 bg-[rgb(var(--primary),0.05)] rounded-full flex items-center justify-center mx-auto mb-6 border border-[rgb(var(--primary),0.1)]">
-              <Check size={32} className="text-[rgb(var(--primary))]" />
-            </div>
-            <h3 className="text-white font-black text-xl tracking-tight">Todo despejado</h3>
-            <p className="text-[rgb(var(--text-secondary))] mt-2 font-medium">No se encontraron tareas bajo estos filtros.</p>
-            <button
-              onClick={() => { setSearchParams({ filter: 'all' }); setSelectedTeam('all'); }}
-              className="mt-6 text-[rgb(var(--primary))] text-xs font-black uppercase tracking-widest hover:underline"
-            >
-              Restablecer filtros
-            </button>
+      {/* Para Subowner/Member solo mostrar etiqueta informativa */}
+      {profile?.role !== 'owner' && teams.length > 0 && (
+        <div className="flex items-center gap-2 mb-6">
+          <div className="px-4 py-2 rounded-xl bg-[#0c0c0c] border border-[#1c1c1c] text-[rgb(var(--text-secondary))] text-[10px] font-bold uppercase tracking-widest">
+            Equipo: <span className="text-[rgb(var(--primary))]">{teams[0]?.name}</span>
           </div>
-        ) : (
-          filtered().map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              members={members}
-              isAdmin={isAdmin}
-              today={today}
-              onEdit={() => setEditingTask({ ...task })}
-              onApprove={() => updateStatus(task.id, 'active')}
-              onReject={() => updateStatus(task.id, 'rejected')}
-              onComplete={() => updateStatus(task.id, 'completed')}
-            />
-          ))
-        )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtered().map(task => (
+          <div key={task.id} className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] transition-all group">
+            <div className="flex justify-between items-start mb-4">
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                task.status === 'completed' ? 'bg-green-500/10 text-green-500' :
+                task.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' :
+                'bg-[rgb(var(--primary),0.1)] text-[rgb(var(--primary))]'
+              }`}>
+                {task.status}
+              </span>
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setEditingTask(task)} className="p-2 hover:bg-white/5 rounded-lg text-[#707070] hover:text-white">
+                  <MoreHorizontal size={16} />
+                </button>
+              </div>
+            </div>
+            
+            <h3 className="text-lg font-bold text-[#f0f0f0] mb-2">{task.title}</h3>
+            <p className="text-sm text-[#707070] line-clamp-2 mb-4">{task.description}</p>
+            
+            <div className="flex items-center justify-between pt-4 border-t border-[#1c1c1c]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[10px] font-bold text-[#707070]">
+                  {task.assigned_profile?.full_name?.substring(0, 2).toUpperCase() || '??'}
+                </div>
+                <span className="text-xs text-[#707070]">{task.assigned_profile?.full_name || 'Sin asignar'}</span>
+              </div>
+              {task.due_date && (
+                <div className="flex items-center gap-1.5 text-[#707070]">
+                  <Clock size={14} />
+                  <span className="text-[10px] font-medium">{new Date(task.due_date).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
+
+      {(showNewTask || editingTask) && (
+        <TaskDrawer
+          task={editingTask}
+          isOpen={showNewTask || !!editingTask}
+          onClose={() => { setShowNewTask(false); setEditingTask(null); }}
+          onSave={saveEdit}
+          members={members}
+          teams={teams}
+          saving={saving}
+          profile={profile}
+        />
+      )}
     </div>
   )
 }

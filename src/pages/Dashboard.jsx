@@ -29,11 +29,26 @@ export default function Dashboard() {
 
   async function fetchData() {
     const today = new Date().toISOString().split('T')[0]
-    const { data: tasks } = await supabase
+    
+    let query = supabase
       .from('tasks')
       .select('*')
       .eq('organization_id', profile.organization_id)
-      .order('created_at', { ascending: false })
+
+    // RBAC Filter
+    if (profile.role !== 'owner' && profile.team_id) {
+      query = query.eq('team_id', profile.team_id)
+      if (profile.role === 'member') {
+        query = query.eq('assigned_to', profile.id)
+      }
+    } else if (profile.role !== 'owner' && !profile.team_id) {
+      setStats({ pending: 0, active: 0, overdue: 0, completed: 0 })
+      setMyTasks([])
+      setLoading(false)
+      return
+    }
+
+    const { data: tasks } = await query.order('created_at', { ascending: false })
 
     if (tasks) {
       setStats({
