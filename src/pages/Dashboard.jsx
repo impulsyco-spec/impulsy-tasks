@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle } from 'lucide-react'
+import { CheckSquare, Clock, AlertCircle, Sparkles, ArrowRight, Circle, Users } from 'lucide-react'
 
 const STATUS_LABELS = {
-  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-100 text-yellow-700' },
-  active: { label: 'Activa', color: 'bg-blue-100 text-blue-700' },
-  completed: { label: 'Completada', color: 'bg-green-100 text-green-700' },
-  rejected: { label: 'Rechazada', color: 'bg-red-100 text-red-700' },
+  pending_approval: { label: 'Por aprobar', color: 'bg-yellow-50 text-yellow-700 border-yellow-100' },
+  active: { label: 'Activa', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+  completed: { label: 'Completada', color: 'bg-green-50 text-green-700 border-green-100' },
+  rejected: { label: 'Rechazada', color: 'bg-red-50 text-red-700 border-red-100' },
 }
 
 export default function Dashboard() {
@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ pending: 0, active: 0, overdue: 0, completed: 0 })
   const [myTasks, setMyTasks] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const isAdmin = profile?.role === 'owner' || profile?.role === 'manager'
 
   useEffect(() => {
     if (!profile?.organization_id) return
@@ -57,36 +59,42 @@ export default function Dashboard() {
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">{greeting}, {firstName} 👋</h2>
-        <p className="text-gray-500 mt-1 text-sm">{profile?.organizations?.name} · {new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+      <div className="mb-10">
+        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{greeting}, {firstName} 👋</h2>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-gray-500 text-sm font-medium">{profile?.organizations?.name}</span>
+          <span className="w-1 h-1 rounded-full bg-gray-300" />
+          <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">
+            {new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </span>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         <StatCard
-          icon={<Clock size={18} />}
+          icon={<Clock size={20} />}
           label="Por aprobar"
           value={stats.pending}
           color="yellow"
           onClick={() => navigate('/tasks?filter=pending_approval')}
         />
         <StatCard
-          icon={<CheckSquare size={18} />}
+          icon={<CheckSquare size={20} />}
           label="Activas"
           value={stats.active}
           color="blue"
           onClick={() => navigate('/tasks?filter=active')}
         />
         <StatCard
-          icon={<AlertCircle size={18} />}
+          icon={<AlertCircle size={20} />}
           label="Vencidas"
           value={stats.overdue}
           color="red"
           onClick={() => navigate('/tasks?filter=overdue')}
         />
         <StatCard
-          icon={<Circle size={18} />}
+          icon={<Circle size={20} />}
           label="Completadas"
           value={stats.completed}
           color="green"
@@ -94,26 +102,26 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-3 lg:gap-4">
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Mis tareas */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">Mis tareas</h3>
+        <div className="lg:col-span-2 premium-card overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100/50 bg-gray-50/30">
+            <h3 className="font-bold text-gray-900">Mis tareas pendientes</h3>
             <button
               onClick={() => navigate('/tasks?filter=mine')}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
+              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-bold uppercase tracking-wider transition-colors"
             >
               Ver todas <ArrowRight size={12} />
             </button>
           </div>
 
           {myTasks.length === 0 ? (
-            <div className="p-10 text-center">
-              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-3">
-                <CheckSquare size={20} className="text-green-500" />
+            <div className="p-12 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4 border border-green-100 shadow-sm">
+                <CheckSquare size={24} className="text-green-500" />
               </div>
-              <p className="text-sm font-medium text-gray-700">Todo al día</p>
-              <p className="text-xs text-gray-400 mt-1">No tienes tareas pendientes</p>
+              <p className="text-sm font-bold text-gray-800">¡Todo al día!</p>
+              <p className="text-xs text-gray-400 mt-1">Has completado todas tus responsabilidades</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -123,18 +131,18 @@ export default function Dashboard() {
                   <div
                     key={task.id}
                     onClick={() => navigate('/tasks')}
-                    className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/50 cursor-pointer transition-all group"
                   >
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOverdue ? 'bg-red-400' : 'bg-blue-400'}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${isOverdue ? 'bg-red-400' : 'bg-blue-400'}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{task.title}</p>
+                      <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{task.title}</p>
                       {task.due_date && (
-                        <p className={`text-xs mt-0.5 ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>
                           {isOverdue ? 'Vencida · ' : 'Vence '}{new Date(task.due_date + 'T00:00:00').toLocaleDateString('es-CO')}
                         </p>
                       )}
                     </div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${STATUS_LABELS[task.status]?.color}`}>
+                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border uppercase tracking-wider flex-shrink-0 ${STATUS_LABELS[task.status]?.color}`}>
                       {STATUS_LABELS[task.status]?.label}
                     </span>
                   </div>
@@ -145,52 +153,56 @@ export default function Dashboard() {
         </div>
 
         {/* Acciones rápidas */}
-        <div className="space-y-3">
-          {profile?.role === 'owner' && (
-            <>
-              <h3 className="font-semibold text-gray-900 text-sm px-1">Acciones rápidas</h3>
-              <button
-                onClick={() => navigate('/transcripts')}
-                className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl text-left hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <Sparkles size={17} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Subir transcript</p>
-                  <p className="text-xs text-blue-200 mt-0.5">Extraer tareas con IA</p>
-                </div>
-                <ArrowRight size={14} className="text-blue-300 ml-auto group-hover:translate-x-0.5 transition-transform" />
-              </button>
+        <div className="space-y-4">
+          <h3 className="font-bold text-gray-900 text-xs uppercase tracking-widest px-1">Acciones rápidas</h3>
+          
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/transcripts')}
+              className="w-full flex items-center gap-4 p-5 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl text-left hover:shadow-lg hover:shadow-blue-500/20 transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-2xl" />
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
+                <Sparkles size={18} className="text-white" />
+              </div>
+              <div className="relative z-10">
+                <p className="text-sm font-bold text-white uppercase tracking-wider">Subir transcript</p>
+                <p className="text-[10px] text-blue-100 font-medium mt-0.5 opacity-80">IA Tarea Extraction</p>
+              </div>
+              <ArrowRight size={16} className="text-blue-200 ml-auto group-hover:translate-x-1 transition-transform relative z-10" />
+            </button>
+          )}
 
-              <button
-                onClick={() => navigate('/tasks?filter=pending_approval')}
-                className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-yellow-300 hover:bg-yellow-50 transition-all shadow-sm group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                  <Clock size={17} className="text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Aprobar tareas</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{stats.pending} pendiente{stats.pending !== 1 ? 's' : ''}</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-300 ml-auto group-hover:text-yellow-500 transition-colors" />
-              </button>
+          <button
+            onClick={() => navigate('/tasks?filter=pending_approval')}
+            className="w-full flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 text-left hover:border-yellow-200 hover:bg-yellow-50/30 transition-all shadow-sm group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center flex-shrink-0 border border-yellow-100">
+              <Clock size={18} className="text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900 uppercase tracking-wider">Aprobar tareas</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                {stats.pending} pendiente{stats.pending !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <ArrowRight size={16} className="text-gray-300 ml-auto group-hover:text-yellow-500 group-hover:translate-x-1 transition-all" />
+          </button>
 
-              <button
-                onClick={() => navigate('/teams')}
-                className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 text-left hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <CheckSquare size={17} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Gestionar equipos</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Asignar miembros</p>
-                </div>
-                <ArrowRight size={14} className="text-gray-300 ml-auto group-hover:text-blue-500 transition-colors" />
-              </button>
-            </>
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/teams')}
+              className="w-full flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 text-left hover:border-blue-200 hover:bg-blue-50/30 transition-all shadow-sm group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 border border-blue-100">
+                <Users size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900 uppercase tracking-wider">Equipos</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Gestionar miembros</p>
+              </div>
+              <ArrowRight size={16} className="text-gray-300 ml-auto group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+            </button>
           )}
         </div>
       </div>
@@ -199,10 +211,10 @@ export default function Dashboard() {
 }
 
 const colorMap = {
-  yellow: { bg: 'bg-yellow-50', icon: 'text-yellow-500', border: 'hover:border-yellow-200' },
-  blue: { bg: 'bg-blue-50', icon: 'text-blue-500', border: 'hover:border-blue-200' },
-  red: { bg: 'bg-red-50', icon: 'text-red-500', border: 'hover:border-red-200' },
-  green: { bg: 'bg-green-50', icon: 'text-green-500', border: 'hover:border-green-200' },
+  yellow: { bg: 'bg-yellow-50', icon: 'text-yellow-500', border: 'hover:border-yellow-200 hover:shadow-yellow-500/5' },
+  blue: { bg: 'bg-blue-50', icon: 'text-blue-500', border: 'hover:border-blue-200 hover:shadow-blue-500/5' },
+  red: { bg: 'bg-red-50', icon: 'text-red-500', border: 'hover:border-red-200 hover:shadow-red-500/5' },
+  green: { bg: 'bg-green-50', icon: 'text-green-500', border: 'hover:border-green-200 hover:shadow-green-500/5' },
 }
 
 function StatCard({ icon, label, value, color, onClick }) {
@@ -210,13 +222,14 @@ function StatCard({ icon, label, value, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`bg-white rounded-2xl p-5 text-left border border-gray-200 ${c.border} hover:shadow-sm transition-all w-full group`}
+      className={`premium-card p-6 text-left border-gray-100/50 ${c.border} group relative overflow-hidden`}
     >
-      <div className={`w-9 h-9 rounded-xl ${c.bg} flex items-center justify-center ${c.icon} mb-3`}>
+      <div className={`w-10 h-10 rounded-2xl ${c.bg} flex items-center justify-center ${c.icon} mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{label}</p>
+      <p className="text-4xl font-black text-gray-900 tracking-tighter">{value}</p>
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{label}</p>
+      <div className={`absolute bottom-0 right-0 w-12 h-12 ${c.bg} opacity-10 rounded-tl-full translate-x-4 translate-y-4`} />
     </button>
   )
 }

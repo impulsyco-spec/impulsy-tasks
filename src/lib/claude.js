@@ -13,11 +13,16 @@ export async function extractTasksFromTranscript(transcript) {
           role: 'user',
           content: `Analiza el siguiente transcript de una reunión e identifica todas las tareas pendientes o action items mencionados.
 
+PARA CADA TAREA:
+- Agrega un emoji relevante al inicio del título (ej: 🚀, 🎨, 📊, 📞).
+- Usa un tono profesional pero dinámico.
+- Asegúrate de capturar fechas y responsables si se mencionan.
+
 Devuelve ÚNICAMENTE un JSON válido con este formato, sin texto adicional:
 {
   "tasks": [
     {
-      "title": "Título corto de la tarea",
+      "title": "🚀 Título corto de la tarea",
       "description": "Descripción detallada de la tarea",
       "due_date": "YYYY-MM-DD o null si no se menciona fecha",
       "assigned_name": "Nombre de la persona responsable mencionada en el transcript, o null si no se menciona"

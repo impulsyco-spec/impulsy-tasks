@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { Users, Plus, X, ChevronDown } from 'lucide-react'
+import { Users, Plus, X, ChevronDown, Camera, Shield, ShieldCheck, User as UserIcon } from 'lucide-react'
 
 export default function Teams() {
   const { profile } = useAuth()
@@ -11,6 +11,8 @@ export default function Teams() {
   const [newTeamName, setNewTeamName] = useState('')
   const [creating, setCreating] = useState(false)
   const [expandedTeam, setExpandedTeam] = useState(null)
+  const [uploadingLogo, setUploadingLogo] = useState(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (!profile?.organization_id) return
@@ -26,8 +28,9 @@ export default function Teams() {
         .order('created_at'),
       supabase
         .from('profiles')
-        .select('id, full_name, role')
-        .eq('organization_id', profile.organization_id),
+        .select('id, full_name, role, avatar_url')
+        .eq('organization_id', profile.organization_id)
+        .order('full_name'),
     ])
     setTeams(t || [])
     setMembers(m || [])
@@ -49,6 +52,7 @@ export default function Teams() {
   }
 
   async function deleteTeam(teamId) {
+    if (!confirm('¿Estás seguro de eliminar este equipo?')) return
     await supabase.from('teams').delete().eq('id', teamId)
     setTeams(prev => prev.filter(t => t.id !== teamId))
   }
@@ -73,110 +77,265 @@ export default function Teams() {
     }))
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Cargando...</div>
+  async function updateRole(memberId, newRole) {
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', memberId)
+    if (!error) {
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m))
+    }
+  }
+
+  async function uploadLogo(teamId, file) {
+    if (!file) return
+    setUploadingLogo(teamId)
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${teamId}-${Math.random()}.${fileExt}`
+    const filePath = `team-logos/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('assets')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      alert('Error al subir logo')
+      setUploadingLogo(null)
+      return
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('assets').getPublicUrl(filePath)
+
+    const { error: updateError } = await supabase
+      .from('teams')
+      .update({ logo_url: publicUrl })
+      .eq('id', teamId)
+
+    if (updateError) {
+      alert('Error al actualizar equipo')
+    } else {
+      setTeams(prev => prev.map(t => t.id === teamId ? { ...t, logo_url: publicUrl } : t))
+    }
+    setUploadingLogo(null)
+  }
+
+  if (loading) return <div className="p-8 text-gray-500 animate-pulse">Cargando equipos...</div>
+
+  const isOwner = profile?.role === 'owner'
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Equipos</h2>
+    <div className="max-w-6xl mx-auto p-8 space-y-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Equipos y Colaboradores</h2>
+          <p className="text-slate-500 mt-1">Gestiona los equipos de trabajo y los roles de acceso.</p>
+        </div>
       </div>
 
-      {/* Crear equipo */}
-      <form onSubmit={createTeam} className="flex gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="Nombre del equipo (ej: Pauta, Diseño, Contenido)"
-          value={newTeamName}
-          onChange={e => setNewTeamName(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          disabled={creating || !newTeamName.trim()}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          <Plus size={15} />
-          Crear equipo
-        </button>
-      </form>
-
-      {/* Lista de equipos */}
-      {teams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400">
-          <Users size={32} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">No hay equipos aún</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {teams.map(team => {
-            const teamMemberIds = (team.team_members || []).map(m => m.profile_id)
-            const available = members.filter(m => !teamMemberIds.includes(m.id))
-            const isExpanded = expandedTeam === team.id
-
-            return (
-              <div key={team.id} className="bg-white rounded-xl border border-gray-200">
-                <div
-                  className="flex items-center gap-3 px-5 py-4 cursor-pointer"
-                  onClick={() => setExpandedTeam(isExpanded ? null : team.id)}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Columna Izquierda: Equipos */}
+        <div className="lg:col-span-2 space-y-6">
+          <section>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Equipos de Trabajo</h3>
+            
+            {isOwner && (
+              <form onSubmit={createTeam} className="flex gap-2 mb-6 p-1 bg-white rounded-2xl premium-shadow border border-slate-100">
+                <input
+                  type="text"
+                  placeholder="Nuevo equipo (ej: Marketing, Desarrollo...)"
+                  value={newTeamName}
+                  onChange={e => setNewTeamName(e.target.value)}
+                  className="flex-1 bg-transparent border-none px-4 py-2 text-sm focus:ring-0"
+                />
+                <button
+                  type="submit"
+                  disabled={creating || !newTeamName.trim()}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md active:scale-95"
                 >
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{team.name}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{teamMemberIds.length} miembro{teamMemberIds.length !== 1 ? 's' : ''}</p>
-                  </div>
-                  <ChevronDown size={16} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                  <button
-                    onClick={e => { e.stopPropagation(); deleteTeam(team.id) }}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar equipo"
-                  >
-                    <X size={14} />
-                  </button>
+                  <Plus size={16} />
+                  Crear
+                </button>
+              </form>
+            )}
+
+            <div className="space-y-4">
+              {teams.length === 0 ? (
+                <div className="premium-card p-10 text-center text-slate-400">
+                  <Users size={32} className="mx-auto mb-3 opacity-20" />
+                  <p className="text-sm">No has creado equipos todavía.</p>
                 </div>
+              ) : (
+                teams.map(team => {
+                  const teamMemberIds = (team.team_members || []).map(m => m.profile_id)
+                  const available = members.filter(m => !teamMemberIds.includes(m.id))
+                  const isExpanded = expandedTeam === team.id
 
-                {isExpanded && (
-                  <div className="border-t border-gray-100 px-5 py-4 space-y-3">
-                    {/* Miembros actuales */}
-                    {team.team_members?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {team.team_members.map(m => (
-                          <div key={m.profile_id} className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2.5 py-1 rounded-full">
-                            <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-medium">
-                              {m.profiles?.full_name?.[0]?.toUpperCase()}
-                            </div>
-                            {m.profiles?.full_name}
-                            <button
-                              onClick={() => removeMember(team.id, m.profile_id)}
-                              className="ml-0.5 text-blue-400 hover:text-blue-700"
-                            >
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-400">Sin miembros aún</p>
-                    )}
-
-                    {/* Agregar miembro */}
-                    {available.length > 0 && (
-                      <select
-                        defaultValue=""
-                        onChange={e => { if (e.target.value) addMember(team.id, e.target.value); e.target.value = '' }}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  return (
+                    <div key={team.id} className={`premium-card overflow-hidden ${isExpanded ? 'ring-2 ring-blue-500/10' : ''}`}>
+                      <div
+                        className="flex items-center gap-4 px-6 py-5 cursor-pointer select-none"
+                        onClick={() => setExpandedTeam(isExpanded ? null : team.id)}
                       >
-                        <option value="">+ Agregar miembro al equipo</option>
-                        {available.map(m => (
-                          <option key={m.id} value={m.id}>{m.full_name} ({m.role})</option>
-                        ))}
-                      </select>
+                        <div className="relative group">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 overflow-hidden group-hover:border-blue-200 transition-colors">
+                            {team.logo_url ? (
+                              <img src={team.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              <Users size={20} />
+                            )}
+                            {isOwner && (
+                              <div 
+                                className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); document.getElementById(`logo-${team.id}`).click() }}
+                              >
+                                <Camera size={14} className="text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <input 
+                            id={`logo-${team.id}`}
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={(e) => uploadLogo(team.id, e.target.files[0])}
+                          />
+                        </div>
+
+                        <div className="flex-1">
+                          <h4 className="font-bold text-slate-800">{team.name}</h4>
+                          <p className="text-xs text-slate-400 font-medium">
+                            {teamMemberIds.length} miembro{teamMemberIds.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <ChevronDown size={18} className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-blue-500' : ''}`} />
+                          {isOwner && (
+                            <button
+                              onClick={e => { e.stopPropagation(); deleteTeam(team.id) }}
+                              className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="bg-slate-50/50 border-t border-slate-100 px-6 py-5 space-y-4">
+                          <div className="flex flex-wrap gap-2">
+                            {team.team_members?.length > 0 ? (
+                              team.team_members.map(m => (
+                                <div key={m.profile_id} className="group flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-xs pl-1 pr-2 py-1 rounded-xl shadow-sm hover:border-blue-200 transition-all">
+                                  <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">
+                                    {m.profiles?.full_name?.[0]?.toUpperCase()}
+                                  </div>
+                                  <span className="font-semibold">{m.profiles?.full_name}</span>
+                                  {isOwner && (
+                                    <button
+                                      onClick={() => removeMember(team.id, m.profile_id)}
+                                      className="ml-1 text-slate-300 hover:text-red-500 transition-colors"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-slate-400 italic">No hay miembros asignados.</p>
+                            )}
+                          </div>
+
+                          {isOwner && available.length > 0 && (
+                            <div className="relative">
+                              <select
+                                defaultValue=""
+                                onChange={e => { if (e.target.value) addMember(team.id, e.target.value); e.target.value = '' }}
+                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-600 appearance-none cursor-pointer hover:border-blue-300 transition-all shadow-sm"
+                              >
+                                <option value="" disabled>+ Asignar colaborador al equipo</option>
+                                {available.map(m => (
+                                  <option key={m.id} value={m.id}>{m.full_name}</option>
+                                ))}
+                              </select>
+                              <Plus size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Columna Derecha: Roles y Permisos */}
+        <div className="space-y-6">
+          <section>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Roles de la Organización</h3>
+            <div className="premium-card p-6 space-y-6">
+              <div className="space-y-4">
+                {members.map(member => (
+                  <div key={member.id} className="flex items-center gap-3 py-3 last:border-0 border-b border-slate-50">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-100">
+                      {member.full_name?.[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-800 truncate">{member.full_name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {member.role === 'owner' ? (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md uppercase tracking-tight">
+                            <ShieldCheck size={10} /> Propietario
+                          </span>
+                        ) : member.role === 'manager' ? (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md uppercase tracking-tight">
+                            <Shield size={10} /> Sub-Owner
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-md uppercase tracking-tight">
+                            <UserIcon size={10} /> Miembro
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {isOwner && member.id !== profile.id && (
+                      <div className="flex items-center gap-1">
+                        {member.role === 'member' ? (
+                          <button
+                            onClick={() => updateRole(member.id, 'manager')}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="Hacer Sub-Owner"
+                          >
+                            <Shield size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => updateRole(member.id, 'member')}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                            title="Quitar permisos"
+                          >
+                            <ShieldCheck size={16} className="text-indigo-600" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
-            )
-          })}
+              
+              <div className="pt-4 border-t border-slate-100">
+                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
+                  <ShieldCheck size={16} className="text-blue-600 mt-0.5" />
+                  <p className="text-[11px] text-blue-700 leading-relaxed">
+                    <strong className="block mb-0.5 text-blue-800">Sobre el Sub-Owner:</strong>
+                    Los sub-owners pueden gestionar tareas, aprobar cambios y ver todos los equipos, pero no pueden eliminar la organización.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      )}
+      </div>
     </div>
   )
 }

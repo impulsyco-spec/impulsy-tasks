@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { extractTasksFromTranscript } from '../lib/claude'
-import { FileText, Sparkles, ChevronRight, X, Check, Edit2 } from 'lucide-react'
+import { FileText, Sparkles, ChevronRight, X, Check, Edit2, History, Send, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Transcripts() {
@@ -96,11 +96,10 @@ export default function Transcripts() {
 
     await supabase.from('tasks').insert(toInsert)
 
-    // Notificar al owner
+    // Notificar al owner/managers
     await supabase.from('notifications').insert({
       user_id: profile.id,
-      task_id: toInsert[0] ? undefined : undefined,
-      message: `${selectedTasks.length} tarea(s) extraídas del transcript "${form.title}" esperan aprobación.`,
+      message: `🤖 ${selectedTasks.length} tarea(s) extraídas del transcript "${form.title}" esperan aprobación.`,
     })
 
     setSaving(false)
@@ -119,46 +118,55 @@ export default function Transcripts() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 lg:p-8 max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Transcripts</h2>
-          <p className="text-gray-500 mt-1">Sube reuniones y extrae tareas con IA</p>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Transcripts</h2>
+          <p className="text-gray-500 mt-1 font-medium">Extrae inteligencia operativa de tus reuniones con IA</p>
         </div>
         <button
           onClick={() => { setShowForm(true); setExtracted(null) }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
         >
-          <Sparkles size={15} />
-          Nuevo transcript
+          <Sparkles size={16} />
+          Nuevo Análisis
         </button>
       </div>
 
       {/* Form */}
       {showForm && !extracted && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Subir transcript</h3>
-          <form onSubmit={handleExtract} className="space-y-4">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título de la reunión</label>
+        <div className="premium-card p-8 mb-10 border-blue-100 bg-gradient-to-br from-white to-blue-50/20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+              <FileText size={20} className="text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-black text-gray-900 tracking-tight text-lg">Subir Reunión</h3>
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">IA Transcript Processor</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleExtract} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Título de la reunión</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Reunión semanal Impulsy - 7 abril"
+                  className="w-full border-2 border-gray-50 rounded-2xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all"
+                  placeholder="Ej: Sprint Planning · Impulsy Q2"
                 />
               </div>
-              <div className="w-44">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Asignar a Equipo</label>
                 <select
                   value={form.team_id}
                   onChange={e => setForm(f => ({ ...f, team_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border-2 border-gray-50 rounded-2xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all cursor-pointer"
                 >
-                  <option value="">Sin equipo</option>
+                  <option value="">Sin equipo (General)</option>
                   {teams.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -166,32 +174,36 @@ export default function Transcripts() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Transcript</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Contenido del Transcript</label>
               <textarea
                 value={form.content}
                 onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                 required
-                rows={10}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
-                placeholder="Pega aquí el texto de la reunión..."
+                rows={12}
+                className="w-full border-2 border-gray-50 rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 resize-none font-mono leading-relaxed placeholder:text-gray-300"
+                placeholder="Pega aquí el texto completo o fragmentos de la reunión..."
               />
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <div className="flex gap-3">
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold border border-red-100">
+                {error}
+              </div>
+            )}
+            <div className="flex gap-4 pt-4">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border-2 border-gray-50 rounded-2xl text-sm font-bold text-gray-500 hover:bg-gray-50 transition-all"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={extracting}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20"
               >
-                <Sparkles size={14} />
-                {extracting ? 'Analizando con Claude...' : 'Extraer tareas con IA'}
+                <Sparkles size={16} className={extracting ? 'animate-pulse' : ''} />
+                {extracting ? 'Análisis con Claude...' : 'Procesar Inteligencia IA'}
               </button>
             </div>
           </form>
@@ -200,60 +212,70 @@ export default function Transcripts() {
 
       {/* Extracted tasks review */}
       {extracted && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-gray-900">Tareas identificadas</h3>
-              <p className="text-sm text-gray-500 mt-0.5">Revisa, edita y selecciona las tareas a crear</p>
+        <div className="premium-card p-8 mb-10 border-green-100 bg-gradient-to-br from-white to-green-50/20">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Check size={20} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900 tracking-tight text-lg">Tareas Identificadas</h3>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Revisión de Extracción</p>
+              </div>
             </div>
-            <span className="text-sm text-gray-500">{extracted.filter(t => t.selected).length} de {extracted.length} seleccionadas</span>
+            <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Seleccionadas: </span>
+              <span className="text-sm font-black text-blue-600">{extracted.filter(t => t.selected).length} de {extracted.length}</span>
+            </div>
           </div>
 
-          <div className="space-y-3 mb-6">
+          <div className="space-y-4 mb-8">
             {extracted.map((task, idx) => (
               <div
                 key={idx}
-                className={`border rounded-lg p-4 transition-colors ${task.selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}
+                className={`group border-2 rounded-2xl p-5 transition-all duration-300 ${task.selected ? 'border-blue-500 bg-white shadow-xl shadow-blue-500/5' : 'border-gray-50 bg-gray-50/50 opacity-60'}`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <button
                     onClick={() => toggleTask(idx)}
-                    className={`mt-0.5 w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'}`}
+                    className={`mt-1 w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${task.selected ? 'bg-blue-600 border-blue-600' : 'border-gray-200 bg-white'}`}
                   >
-                    {task.selected && <Check size={12} className="text-white" />}
+                    {task.selected && <Check size={14} className="text-white" strokeWidth={3} />}
                   </button>
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-3">
                     <input
                       type="text"
                       value={task.title}
                       onChange={e => updateTask(idx, 'title', e.target.value)}
-                      className="w-full text-sm font-medium bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-0"
+                      className="w-full text-base font-black text-gray-900 bg-transparent border-0 border-b-2 border-transparent focus:border-blue-500 focus:outline-none py-1 transition-all"
                     />
                     <textarea
                       value={task.description}
                       onChange={e => updateTask(idx, 'description', e.target.value)}
                       rows={2}
-                      className="w-full text-sm text-gray-600 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none resize-none py-0"
+                      className="w-full text-sm font-medium text-gray-500 bg-transparent border-0 border-b-2 border-transparent focus:border-blue-500 focus:outline-none resize-none py-1 transition-all"
                     />
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Vence:</span>
+                    <div className="flex items-center gap-6 flex-wrap pt-2">
+                      <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                        <Calendar size={12} className="text-gray-400" />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Vence:</span>
                         <input
                           type="date"
                           value={task.due_date || ''}
                           onChange={e => updateTask(idx, 'due_date', e.target.value)}
-                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none"
+                          className="text-xs font-bold text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Asignar a:</span>
+                      <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                        <User size={12} className="text-gray-400" />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Responsable:</span>
                         {task.assigned_name && (
-                          <span className="text-xs text-blue-500 font-medium">{task.assigned_name} →</span>
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{task.assigned_name}</span>
                         )}
                         <select
                           value={task.assigned_to || ''}
                           onChange={e => updateTask(idx, 'assigned_to', e.target.value)}
-                          className="text-xs text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer"
+                          className="text-xs font-bold text-gray-600 bg-transparent border-0 focus:outline-none cursor-pointer"
                         >
                           <option value="">Sin asignar</option>
                           {teamMembers().map(m => (
@@ -268,46 +290,57 @@ export default function Transcripts() {
             ))}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <button
               onClick={() => { setExtracted(null); setShowForm(false) }}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              className="px-8 py-4 border-2 border-gray-50 rounded-2xl text-sm font-bold text-gray-500 hover:bg-gray-50 transition-all"
             >
-              Descartar
+              Descartar Todo
             </button>
             <button
               onClick={handleSaveTasks}
               disabled={saving || extracted.filter(t => t.selected).length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-black hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20"
             >
-              <Check size={14} />
-              {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} tareas a aprobación`}
+              <Send size={18} />
+              {saving ? 'Guardando...' : `Enviar ${extracted.filter(t => t.selected).length} Tareas a Aprobación`}
             </button>
           </div>
         </div>
       )}
 
       {/* Transcripts list */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Historial</h3>
+      <div className="premium-card overflow-hidden">
+        <div className="px-8 py-5 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <History size={18} className="text-gray-400" />
+            <h3 className="font-black text-gray-900 tracking-tight">Historial de Análisis</h3>
+          </div>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{transcripts.length} registros</span>
         </div>
         {transcripts.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
-            <FileText size={32} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No hay transcripts aún</p>
+          <div className="p-20 text-center">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileText size={24} className="text-gray-300" />
+            </div>
+            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No hay registros aún</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-50">
             {transcripts.map(t => (
-              <div key={t.id} className="flex items-center gap-4 px-6 py-3">
-                <FileText size={16} className="text-gray-400 flex-shrink-0" />
+              <div key={t.id} className="flex items-center gap-4 px-8 py-5 hover:bg-slate-50 transition-colors group">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-white transition-colors">
+                  <FileText size={18} className="text-blue-500" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {t.profiles?.full_name} · {new Date(t.created_at).toLocaleDateString('es-CO')}
+                  <p className="text-sm font-bold text-gray-900 truncate">{t.title}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 flex items-center gap-2">
+                    <span className="text-blue-500">{t.profiles?.full_name}</span>
+                    <span className="text-gray-200">|</span>
+                    {new Date(t.created_at).toLocaleDateString('es-CO', { dateStyle: 'medium' })}
                   </p>
                 </div>
+                <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
               </div>
             ))}
           </div>
