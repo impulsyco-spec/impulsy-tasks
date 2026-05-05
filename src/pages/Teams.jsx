@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Users, Search, MoreHorizontal, Settings2, Trash2, Camera, UserPlus, Shield, Mail } from 'lucide-react'
+import { Plus, Users, Search, MoreHorizontal, Settings2, Trash2, Camera, UserPlus, Shield, Mail, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import TeamDrawer from '../components/TeamDrawer'
