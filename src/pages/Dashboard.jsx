@@ -36,16 +36,15 @@ export default function Dashboard() {
       .eq('organization_id', profile.organization_id)
 
     // RBAC Filter
-    if (profile.role !== 'owner' && profile.team_id) {
-      query = query.eq('team_id', profile.team_id)
-      if (profile.role === 'member') {
-        query = query.eq('assigned_to', profile.id)
+    if (profile.role !== 'owner') {
+      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      if (myTeamIds.length === 0) {
+        setStats({ pending: 0, active: 0, overdue: 0, completed: 0 })
+        setMyTasks([])
+        setLoading(false)
+        return
       }
-    } else if (profile.role !== 'owner' && !profile.team_id) {
-      setStats({ pending: 0, active: 0, overdue: 0, completed: 0 })
-      setMyTasks([])
-      setLoading(false)
-      return
+      query = query.in('team_id', myTeamIds)
     }
 
     const { data: tasks } = await query.order('created_at', { ascending: false })

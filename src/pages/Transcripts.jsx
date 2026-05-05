@@ -25,10 +25,17 @@ export default function Transcripts() {
   }, [profile])
 
   async function fetchTeams() {
-    const { data } = await supabase
+    let query = supabase
       .from('teams')
       .select('id, name, team_members(profile_id, profiles(id, full_name))')
       .eq('organization_id', profile.organization_id)
+
+    if (profile.role !== 'owner') {
+      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      query = query.in('id', myTeamIds)
+    }
+
+    const { data } = await query
     setTeams(data || [])
   }
 
@@ -40,11 +47,17 @@ export default function Transcripts() {
   }
 
   async function fetchTranscripts() {
-    const { data } = await supabase
+    let query = supabase
       .from('transcripts')
       .select('*, profiles(full_name)')
       .eq('organization_id', profile.organization_id)
-      .order('created_at', { ascending: false })
+
+    if (profile.role !== 'owner') {
+      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      query = query.in('team_id', myTeamIds)
+    }
+
+    const { data } = await query.order('created_at', { ascending: false })
     setTranscripts(data || [])
   }
 

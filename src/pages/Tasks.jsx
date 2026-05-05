@@ -39,14 +39,9 @@ export default function Tasks() {
 
     // RESTRICCIONES DE ROL (RBAC)
     if (profile.role !== 'owner') {
-      // Subowners y Members solo ven su equipo
-      tasksQuery = tasksQuery.eq('team_id', profile.team_id)
-      teamsQuery = teamsQuery.eq('id', profile.team_id)
-
-      if (profile.role === 'member') {
-        // Members solo ven tareas asignadas a ellos
-        tasksQuery = tasksQuery.eq('assigned_to', profile.id)
-      }
+      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      tasksQuery = tasksQuery.in('team_id', myTeamIds)
+      teamsQuery = teamsQuery.in('id', myTeamIds)
     }
 
     const [{ data: t }, { data: m }, { data: tm }] = await Promise.all([
@@ -172,7 +167,7 @@ export default function Tasks() {
       </div>
 
       {/* Team Selector - Solo visible para OWNER */}
-      {profile?.role === 'owner' && teams.length > 0 && (
+      {(profile?.role === 'owner' || teams.length > 1) && teams.length > 0 && (
         <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
           <button
             onClick={() => setSelectedTeam('all')}
@@ -224,8 +219,8 @@ export default function Tasks() {
         </div>
       )}
 
-      {/* Para Subowner/Member solo mostrar etiqueta informativa */}
-      {profile?.role !== 'owner' && teams.length > 0 && (
+      {/* Para Subowner/Member solo mostrar etiqueta informativa si solo tiene un equipo */}
+      {profile?.role !== 'owner' && teams.length === 1 && (
         <div className="flex items-center gap-2 mb-6">
           <div className="px-4 py-2 rounded-xl bg-[#0c0c0c] border border-[#1c1c1c] text-[rgb(var(--text-secondary))] text-[10px] font-bold uppercase tracking-widest">
             Equipo: <span className="text-[rgb(var(--primary))]">{teams[0]?.name}</span>

@@ -22,12 +22,14 @@ export default function Teams() {
         .eq('organization_id', profile.organization_id)
 
       // RBAC: Solo el Owner ve todos los equipos
-      if (profile.role !== 'owner' && profile.team_id) {
-        query = query.eq('id', profile.team_id)
-      } else if (profile.role !== 'owner' && !profile.team_id) {
-        setTeams([])
-        setLoading(false)
-        return
+      if (profile.role !== 'owner') {
+        const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+        if (myTeamIds.length === 0) {
+          setTeams([])
+          setLoading(false)
+          return
+        }
+        query = query.in('id', myTeamIds)
       }
 
       const { data } = await query.order('name')
