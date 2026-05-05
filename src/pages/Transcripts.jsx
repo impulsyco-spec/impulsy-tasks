@@ -31,7 +31,7 @@ export default function Transcripts() {
       .eq('organization_id', profile.organization_id)
 
     if (profile.role !== 'owner') {
-      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      const myTeamIds = (profile.team_members || []).map(tm => tm.team_id)
       query = query.in('id', myTeamIds)
     }
 
@@ -53,7 +53,7 @@ export default function Transcripts() {
       .eq('organization_id', profile.organization_id)
 
     if (profile.role !== 'owner') {
-      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      const myTeamIds = (profile.team_members || []).map(tm => tm.team_id)
       query = query.in('team_id', myTeamIds)
     }
 

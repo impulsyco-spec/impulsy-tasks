@@ -37,7 +37,8 @@ export default function Dashboard() {
 
     // RBAC Filter
     if (profile.role !== 'owner') {
-      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+      const myTeamIds = (profile.team_members || []).map(tm => tm.team_id)
+      
       if (myTeamIds.length === 0) {
         setStats({ pending: 0, active: 0, overdue: 0, completed: 0 })
         setMyTasks([])

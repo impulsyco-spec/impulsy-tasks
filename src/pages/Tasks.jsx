@@ -39,9 +39,16 @@ export default function Tasks() {
 
     // RESTRICCIONES DE ROL (RBAC)
     if (profile.role !== 'owner') {
-      const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
-      tasksQuery = tasksQuery.in('team_id', myTeamIds)
-      teamsQuery = teamsQuery.in('id', myTeamIds)
+      const myTeamIds = (profile.team_members || []).map(tm => tm.team_id)
+      
+      if (myTeamIds.length > 0) {
+        tasksQuery = tasksQuery.in('team_id', myTeamIds)
+        teamsQuery = teamsQuery.in('id', myTeamIds)
+      } else {
+        // Bloqueo de seguridad: si no tiene equipos asignados, no ve nada
+        tasksQuery = tasksQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+        teamsQuery = teamsQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      }
     }
 
     const [{ data: t }, { data: m }, { data: tm }] = await Promise.all([

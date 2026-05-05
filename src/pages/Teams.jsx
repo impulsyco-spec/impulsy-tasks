@@ -23,7 +23,8 @@ export default function Teams() {
 
       // RBAC: Solo el Owner ve todos los equipos
       if (profile.role !== 'owner') {
-        const myTeamIds = profile.team_members?.map(tm => tm.team_id) || []
+        const myTeamIds = (profile.team_members || []).map(tm => tm.team_id)
+        
         if (myTeamIds.length === 0) {
           setTeams([])
           setLoading(false)

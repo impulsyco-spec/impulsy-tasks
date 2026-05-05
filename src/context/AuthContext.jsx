@@ -9,12 +9,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
-      .select('*, organizations(*), team_members(team_id)')
+      .select('*, organizations(*)')
       .eq('id', userId)
       .single()
-    setProfile(data)
+    
+    if (profileData) {
+      const { data: memberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('profile_id', userId)
+      
+      setProfile({ ...profileData, team_members: memberships || [] })
+    } else {
+      setProfile(null)
+    }
   }
 
   useEffect(() => {
