@@ -11,6 +11,7 @@ export default function Teams() {
   const [showNewTeam, setShowNewTeam] = useState(false)
   const [editingTeam, setEditingTeam] = useState(null)
   const [uploadingLogo, setUploadingLogo] = useState(null)
+  const [imageErrors, setImageErrors] = useState({})
 
   useEffect(() => {
     if (!profile?.organization_id) return
@@ -74,7 +75,7 @@ export default function Teams() {
   }
 
   function getLogoDisplay(team) {
-    if (team.logo_url) return { type: 'img', src: team.logo_url }
+    if (team.logo_url && !imageErrors[team.id]) return { type: 'img', src: team.logo_url }
     return { type: 'text', text: team.name.substring(0, 2).toUpperCase() }
   }
 
@@ -110,7 +111,12 @@ export default function Teams() {
               <div className="flex justify-between items-start mb-6">
                 <div className="relative group/logo">
                   {logo.type === 'img' ? (
-                    <img src={logo.src} alt={t.name} className="w-16 h-16 rounded-2xl object-cover border border-[#1c1c1c]" />
+                    <img 
+                      src={logo.src} 
+                      alt={t.name} 
+                      className="w-16 h-16 rounded-2xl object-cover border border-[#1c1c1c]"
+                      onError={() => setImageErrors(prev => ({ ...prev, [t.id]: true }))}
+                    />
                   ) : (
                     <div className="w-16 h-16 rounded-2xl bg-[rgb(var(--card))] border border-[#1c1c1c] flex items-center justify-center text-xl font-black text-[rgb(var(--primary))]">
                       {logo.text}

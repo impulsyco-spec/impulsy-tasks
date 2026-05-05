@@ -17,6 +17,7 @@ export default function Tasks() {
   const [showNewTask, setShowNewTask] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [imageErrors, setImageErrors] = useState({})
 
   const isAdmin = profile?.role === 'owner' || profile?.role === 'manager'
   const today = new Date().toISOString().split('T')[0]
@@ -147,7 +148,7 @@ export default function Tasks() {
   }
 
   function getLogoDisplay(team) {
-    if (team.logo_url) return { type: 'img', src: team.logo_url }
+    if (team.logo_url && !imageErrors[team.id]) return { type: 'img', src: team.logo_url }
     return { type: 'text', text: team.name.substring(0, 2).toUpperCase() }
   }
 
@@ -210,7 +211,12 @@ export default function Tasks() {
                 }`}
               >
                 {logo.type === 'img' ? (
-                  <img src={logo.src} alt={team.name} className="w-6 h-6 rounded-lg object-cover" />
+                  <img 
+                    src={logo.src} 
+                    alt={team.name} 
+                    className="w-6 h-6 rounded-lg object-cover"
+                    onError={() => setImageErrors(prev => ({ ...prev, [team.id]: true }))}
+                  />
                 ) : (
                   <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[10px] font-black">
                     {logo.text}
