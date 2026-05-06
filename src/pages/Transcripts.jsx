@@ -17,6 +17,7 @@ export default function Transcripts() {
   const [saving, setSaving] = useState(false)
   const [currentTranscriptId, setCurrentTranscriptId] = useState(null)
   const [error, setError] = useState('')
+  const [viewingTranscript, setViewingTranscript] = useState(null)
 
   useEffect(() => {
     if (!profile?.organization_id) return
@@ -340,7 +341,7 @@ export default function Transcripts() {
         ) : (
           <div className="divide-y divide-[#1c1c1c]">
             {transcripts.map(t => (
-              <div key={t.id} className="flex items-center gap-4 px-8 py-5 hover:bg-[#141414]/50 transition-colors group cursor-pointer">
+              <div key={t.id} onClick={() => setViewingTranscript(t)} className="flex items-center gap-4 px-8 py-5 hover:bg-[#141414]/50 transition-colors group cursor-pointer">
                 <div className="w-10 h-10 bg-[rgb(var(--primary))]/5 rounded-xl flex items-center justify-center group-hover:bg-[rgb(var(--primary))]/10 border border-[#1c1c1c] transition-colors">
                   <FileText size={18} className="text-[rgb(var(--primary))]" />
                 </div>
@@ -358,6 +359,42 @@ export default function Transcripts() {
           </div>
         )}
       </div>
+
+      {/* Viewing Transcript Drawer */}
+      {viewingTranscript && (
+        <>
+          <div className="fixed inset-0 bg-black/80 z-40 backdrop-blur-sm" onClick={() => setViewingTranscript(null)} />
+          <div className="fixed right-0 top-0 h-full w-[600px] max-w-full z-50 bg-[#0c0c0c] border-l border-[#1c1c1c] flex flex-col shadow-2xl shadow-black animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-[#1c1c1c] bg-[#141414]/50">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-8 h-8 bg-[rgb(var(--primary))]/10 rounded-lg flex items-center justify-center border border-[rgb(var(--primary))]/20">
+                    <FileText size={14} className="text-[rgb(var(--primary))]" />
+                  </div>
+                  <h2 className="text-xl font-black text-white">{viewingTranscript.title}</h2>
+                </div>
+                <p className="text-[10px] font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest flex items-center gap-2">
+                  <span className="text-[rgb(var(--primary))]">{viewingTranscript.profiles?.full_name}</span>
+                  <span className="text-[#252525]">|</span>
+                  {new Date(viewingTranscript.created_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+              </div>
+              <button onClick={() => setViewingTranscript(null)}
+                className="w-8 h-8 rounded-xl bg-black border border-[#1c1c1c] text-[#707070] flex items-center justify-center hover:border-[#333] hover:text-white transition-all">
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-[#050505]">
+              <div className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl p-6 shadow-sm">
+                <h4 className="text-[10px] font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest mb-4 border-b border-[#1c1c1c] pb-2">Contenido extraído</h4>
+                <div className="whitespace-pre-wrap font-mono text-sm leading-loose text-[#c8c8c8]">
+                  {viewingTranscript.content}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
