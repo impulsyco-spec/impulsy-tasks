@@ -120,23 +120,43 @@ export default function Tasks() {
 
   async function saveEdit(task) {
     setSaving(true)
-    await supabase.from('tasks').update({
-      title: task.title,
-      description: task.description,
-      due_date: task.due_date || null,
-      assigned_to: task.assigned_to || null,
-    }).eq('id', task.id)
+    let finalTaskId = task.id
+    
+    if (task.id) {
+      await supabase.from('tasks').update({
+        title: task.title,
+        description: task.description,
+        due_date: task.due_date || null,
+        assigned_to: task.assigned_to || null,
+        team_id: task.team_id || null,
+      }).eq('id', task.id)
+    } else {
+      const { data, error } = await supabase.from('tasks').insert({
+        organization_id: profile.organization_id,
+        created_by: profile.id,
+        title: task.title,
+        description: task.description,
+        due_date: task.due_date || null,
+        assigned_to: task.assigned_to || null,
+        team_id: task.team_id || null,
+        status: 'pending'
+      }).select().single()
+      if (!error && data) {
+        finalTaskId = data.id
+      }
+    }
 
     // Notificar si se asigna
-    if (task.assigned_to) {
+    if (task.assigned_to && finalTaskId) {
       await supabase.from('notifications').insert({
         user_id: task.assigned_to,
-        task_id: task.id,
+        task_id: finalTaskId,
         message: `Se te asignó la tarea "${task.title}".`,
       })
     }
 
     await fetchAll()
+    setShowNewTask(false)
     setEditingTask(null)
     setSaving(false)
   }

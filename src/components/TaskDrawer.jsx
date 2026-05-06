@@ -7,25 +7,34 @@ const PRIORIDADES = [
   { id: 'normal', label: 'Normal', color: '#404040', dim: 'rgba(64,64,64,0.2)' },
 ]
 
-export default function TaskDrawer({ abierto, onCerrar, onGuardar, tareaInicial = null, reuniones = [] }) {
+export default function TaskDrawer({ isOpen, onClose, onSave, task = null, members = [], teams = [], saving = false }) {
   const [form, setForm] = useState({
-    titulo: '', descripcion: '', asignado: '',
-    fechaVencimiento: '', categoria: '', prioridad: 'normal', reunionId: ''
+    title: '', description: '', assigned_to: '',
+    due_date: '', team_id: ''
   })
 
   useEffect(() => {
-    if (tareaInicial) setForm(tareaInicial)
-    else setForm({ titulo:'',descripcion:'',asignado:'',fechaVencimiento:'',categoria:'',prioridad:'normal',reunionId:'' })
-  }, [tareaInicial, abierto])
+    if (task) {
+      setForm({
+        title: task.title || '',
+        description: task.description || '',
+        assigned_to: task.assigned_to || '',
+        due_date: task.due_date ? task.due_date.split('T')[0] : '',
+        team_id: task.team_id || ''
+      })
+    } else {
+      setForm({ title:'',description:'',assigned_to:'',due_date:'',team_id:'' })
+    }
+  }, [task, isOpen])
 
   const set = (campo, valor) => setForm(f => ({ ...f, [campo]: valor }))
 
-  if (!abierto) return null
+  if (!isOpen) return null
 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/60 z-40" onClick={onCerrar} />
+      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-[400px] max-w-full z-50
@@ -35,9 +44,9 @@ export default function TaskDrawer({ abierto, onCerrar, onGuardar, tareaInicial 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1c1c1c]">
           <h2 className="text-sm font-bold text-[#f0f0f0]">
-            {tareaInicial ? 'Editar tarea' : 'Nueva tarea'}
+            {task ? 'Editar tarea' : 'Nueva tarea'}
           </h2>
-          <button onClick={onCerrar}
+          <button onClick={onClose}
             className="w-7 h-7 rounded-[6px] text-[#404040] text-sm flex items-center justify-center
                        hover:bg-[#141414] hover:text-[#c8c8c8] transition-all">✕</button>
         </div>
@@ -47,7 +56,7 @@ export default function TaskDrawer({ abierto, onCerrar, onGuardar, tareaInicial 
 
           {/* Título */}
           <div>
-            <input value={form.titulo} onChange={e => set('titulo', e.target.value)}
+            <input value={form.title} onChange={e => set('title', e.target.value)}
               placeholder="¿Qué hay que hacer?"
               className="w-full bg-transparent border-none outline-none text-base font-semibold
                          text-[#f0f0f0] placeholder:text-[#404040]" />
@@ -59,7 +68,7 @@ export default function TaskDrawer({ abierto, onCerrar, onGuardar, tareaInicial 
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
               Descripción
             </label>
-            <textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)}
+            <textarea value={form.description} onChange={e => set('description', e.target.value)}
               placeholder="Contexto o instrucciones..."
               rows={3}
               className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
@@ -68,97 +77,61 @@ export default function TaskDrawer({ abierto, onCerrar, onGuardar, tareaInicial 
                          focus:border-[rgba(18,252,217,0.3)] transition-colors" />
           </div>
 
-          {/* Asignado + Fecha — 2 columnas */}
+          {/* Asignado + Fecha + Equipo */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
                 Asignado a
               </label>
-              <input value={form.asignado} onChange={e => set('asignado', e.target.value)}
-                placeholder="Nombre..."
+              <select value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)}
                 className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
-                           text-xs text-[#c8c8c8] placeholder:text-[#404040]
-                           px-3 py-2.5 outline-none focus:border-[rgba(18,252,217,0.3)] transition-colors" />
+                           text-xs text-[#c8c8c8] px-3 py-2.5 outline-none
+                           focus:border-[rgba(18,252,217,0.3)] transition-colors appearance-none">
+                <option value="">Sin asignar</option>
+                {members.map(m => (
+                  <option key={m.id} value={m.id}>{m.full_name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
                 Fecha límite
               </label>
-              <input type="date" value={form.fechaVencimiento} onChange={e => set('fechaVencimiento', e.target.value)}
+              <input type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)}
                 className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
                            text-xs text-[#707070] px-3 py-2.5 outline-none
                            focus:border-[rgba(18,252,217,0.3)] transition-colors" />
             </div>
           </div>
 
-          {/* Categoría */}
           <div>
             <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
-              Categoría
+              Equipo
             </label>
-            <div className="flex flex-wrap gap-1.5">
-              {CATEGORIAS.map(c => (
-                <button key={c} onClick={() => set('categoria', c)}
-                  className={`text-xs font-semibold px-3 py-1 rounded-[5px] border transition-all
-                    ${form.categoria === c
-                      ? 'bg-[rgba(18,252,217,0.12)] border-[rgba(18,252,217,0.3)] text-[#0dd4b8]'
-                      : 'border-[#1c1c1c] bg-transparent text-[#404040] hover:border-[#252525] hover:text-[#707070]'
-                    }`}>
-                  {c}
-                </button>
+            <select value={form.team_id} onChange={e => set('team_id', e.target.value)}
+              className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
+                         text-xs text-[#c8c8c8] px-3 py-2.5 outline-none
+                         focus:border-[rgba(18,252,217,0.3)] transition-colors appearance-none">
+              <option value="">Sin equipo</option>
+              {teams.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
               ))}
-            </div>
+            </select>
           </div>
-
-          {/* Prioridad */}
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
-              Prioridad
-            </label>
-            <div className="flex gap-2">
-              {PRIORIDADES.map(p => (
-                <button key={p.id} onClick={() => set('prioridad', p.id)}
-                  className={`flex-1 text-xs font-bold py-1.5 rounded-[6px] border transition-all`}
-                  style={form.prioridad === p.id
-                    ? { background: p.dim, borderColor: p.color, color: p.color }
-                    : { background: 'transparent', borderColor: '#1c1c1c', color: '#404040' }}>
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Reunión de origen */}
-          {reuniones.length > 0 && (
-            <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
-                Reunión de origen
-              </label>
-              <select value={form.reunionId} onChange={e => set('reunionId', e.target.value)}
-                className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
-                           text-xs text-[#707070] px-3 py-2.5 outline-none
-                           focus:border-[rgba(18,252,217,0.3)] transition-colors">
-                <option value="">Sin reunión asignada</option>
-                {reuniones.map(r => (
-                  <option key={r.id} value={r.id}>{r.nombre} — {r.fecha}</option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[#1c1c1c] flex items-center justify-end gap-2">
-          <button onClick={onCerrar}
+          <button onClick={onClose}
             className="text-xs text-[#404040] hover:text-[#707070] px-4 py-2 transition-colors">
             Cancelar
           </button>
-          <button onClick={() => onGuardar(form)}
-            disabled={!form.titulo.trim()}
+          <button onClick={() => onSave(form)}
+            disabled={!form.title.trim() || saving}
             className="text-xs font-extrabold bg-[#12fcd9] text-black px-5 py-2 rounded-[7px]
                        hover:shadow-[0_0_16px_rgba(18,252,217,0.25)] hover:opacity-90
                        disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-            {tareaInicial ? 'Guardar cambios' : 'Crear tarea'}
+            {saving ? 'Guardando...' : (task ? 'Guardar cambios' : 'Crear tarea')}
           </button>
         </div>
       </div>

@@ -1,8 +1,13 @@
 export async function extractTasksFromTranscript(transcript) {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('Por favor configura VITE_OPENAI_API_KEY en tu archivo .env para poder extraer tareas con IA.')
+  }
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
