@@ -18,6 +18,8 @@ export default function Transcripts() {
   const [currentTranscriptId, setCurrentTranscriptId] = useState(null)
   const [error, setError] = useState('')
   const [viewingTranscript, setViewingTranscript] = useState(null)
+  const [viewingTasks, setViewingTasks] = useState([])
+  const [loadingTasks, setLoadingTasks] = useState(false)
 
   useEffect(() => {
     if (!profile?.organization_id) return
@@ -60,6 +62,26 @@ export default function Transcripts() {
 
     const { data } = await query.order('created_at', { ascending: false })
     setTranscripts(data || [])
+  }
+
+  useEffect(() => {
+    if (viewingTranscript) {
+      fetchTasksForTranscript(viewingTranscript.id)
+    } else {
+      setViewingTasks([])
+    }
+  }, [viewingTranscript])
+
+  async function fetchTasksForTranscript(transcriptId) {
+    setLoadingTasks(true)
+    const { data } = await supabase
+      .from('tasks')
+      .select('*, assigned_user:profiles!tasks_assigned_to_fkey(full_name)')
+      .eq('transcript_id', transcriptId)
+      .order('created_at', { ascending: false })
+    
+    setViewingTasks(data || [])
+    setLoadingTasks(false)
   }
 
   async function handleExtract(e) {
@@ -384,12 +406,61 @@ export default function Transcripts() {
                 <X size={14} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-[#050505]">
+            <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-[#050505] space-y-6">
               <div className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl p-6 shadow-sm">
                 <h4 className="text-[10px] font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest mb-4 border-b border-[#1c1c1c] pb-2">Contenido extraído</h4>
                 <div className="whitespace-pre-wrap font-mono text-sm leading-loose text-[#c8c8c8]">
                   {viewingTranscript.content}
                 </div>
+              </div>
+
+              {/* Tareas generadas */}
+              <div className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-[#1c1c1c] pb-2 mb-4">
+                  <h4 className="text-[10px] font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest">Tareas Generadas</h4>
+                  <span className="text-[10px] font-bold text-[rgb(var(--primary))] bg-[rgb(var(--primary))]/10 px-2 py-0.5 rounded-full">
+                    {viewingTasks.length}
+                  </span>
+                </div>
+                
+                {loadingTasks ? (
+                  <div className="text-center py-8 text-[rgb(var(--text-muted))] text-sm">Cargando tareas...</div>
+                ) : viewingTasks.length === 0 ? (
+                  <div className="text-center py-8 text-[rgb(var(--text-muted))] text-sm">No se generaron tareas para este transcript.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {viewingTasks.map(task => (
+                      <div key={task.id} className="bg-[#141414] border border-[#1c1c1c] rounded-xl p-4 transition-all hover:border-[#333]">
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <h5 className="font-bold text-white text-sm">{task.title}</h5>
+                            {task.description && (
+                              <p className="text-xs text-[rgb(var(--text-muted))] mt-1 line-clamp-2">{task.description}</p>
+                            )}
+                          </div>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md shrink-0
+                            ${task.status === 'completed' ? 'bg-[rgb(var(--success))]/10 text-[rgb(var(--success))]' : 
+                              task.status === 'in_progress' ? 'bg-blue-500/10 text-blue-400' : 
+                              'bg-white/5 text-[rgb(var(--text-muted))]'}`}>
+                            {task.status === 'completed' ? 'Completada' : task.status === 'in_progress' ? 'En progreso' : 'Pendiente'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#1c1c1c]">
+                          {task.assigned_user ? (
+                            <div className="text-[10px] font-bold text-[#c8c8c8] flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-md bg-[rgb(var(--primary))]/20 text-[rgb(var(--primary))] flex items-center justify-center">
+                                {task.assigned_user.full_name.charAt(0).toUpperCase()}
+                              </span>
+                              {task.assigned_user.full_name}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] font-bold text-[rgb(var(--text-muted))]">Sin asignar</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
