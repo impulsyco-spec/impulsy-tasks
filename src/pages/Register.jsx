@@ -57,9 +57,9 @@ export default function Register({ onSwitch }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-black font-sans text-white">
+    <div className="min-h-screen flex bg-[rgb(var(--background))] font-sans text-[rgb(var(--text-primary))]">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#050505] border-r border-[#1c1c1c] flex-col justify-between p-16 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-[#050505] border-r border-[rgb(var(--border))] flex-col justify-between p-16 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[rgb(var(--primary))]/10 rounded-full blur-[120px] -mr-48 -mt-48" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px] -ml-32 -mb-32" />
         
@@ -68,7 +68,7 @@ export default function Register({ onSwitch }) {
         </div>
 
         <div className="relative z-10 max-w-md">
-          <h2 className="text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
+          <h2 className="text-5xl font-black text-[rgb(var(--text-primary))] leading-[1.1] mb-6 tracking-tight">
             Lleva tu agencia al <span className="text-[rgb(var(--primary))]">siguiente nivel.</span>
           </h2>
           <p className="text-[rgb(var(--text-secondary))] text-lg leading-relaxed font-medium">
@@ -82,12 +82,12 @@ export default function Register({ onSwitch }) {
             { t: 'Gestión de Equipos', d: 'Roles de Owners y Managers.' },
             { t: 'Fácil Integración', d: 'Transcripts de cualquier plataforma.' }
           ].map((item, i) => (
-            <div key={i} className="flex items-center gap-4 bg-[#0c0c0c]/60 backdrop-blur-sm border border-[#1c1c1c] p-4 rounded-2xl shadow-sm">
+            <div key={i} className="flex items-center gap-4 bg-[rgb(var(--card))]/60 backdrop-blur-sm border border-[rgb(var(--border))] p-4 rounded-2xl shadow-sm">
               <div className="w-10 h-10 rounded-xl bg-[rgb(var(--primary))]/10 flex items-center justify-center flex-shrink-0 border border-[rgb(var(--primary))]/20">
                 <CheckCircle2 size={20} className="text-[rgb(var(--primary))]" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm tracking-tight">{item.t}</p>
+                <p className="text-[rgb(var(--text-primary))] font-bold text-sm tracking-tight">{item.t}</p>
                 <p className="text-[rgb(var(--text-muted))] text-xs font-medium uppercase tracking-wider">{item.d}</p>
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function Register({ onSwitch }) {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-black">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[rgb(var(--background))]">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-12">
             <Logo size="md" />
@@ -104,13 +104,13 @@ export default function Register({ onSwitch }) {
 
           {/* Step indicator */}
           <div className="flex items-center gap-3 mb-10">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${step >= 1 ? 'bg-[rgb(var(--primary))] text-black shadow-[0_0_12px_rgba(18,252,217,0.3)]' : 'bg-[#0c0c0c] text-[rgb(var(--text-muted))]'}`}>1</div>
-            <div className={`flex-1 h-0.5 rounded-full transition-all ${step >= 2 ? 'bg-[rgb(var(--primary))]' : 'bg-[#1c1c1c]'}`} />
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${step >= 2 ? 'bg-[rgb(var(--primary))] text-black shadow-[0_0_12px_rgba(18,252,217,0.3)]' : 'bg-[#0c0c0c] text-[rgb(var(--text-muted))]'}`}>2</div>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${step >= 1 ? 'bg-[rgb(var(--primary))] text-black shadow-[0_0_12px_rgba(18,252,217,0.3)]' : 'bg-[rgb(var(--card))] text-[rgb(var(--text-muted))]'}`}>1</div>
+            <div className={`flex-1 h-0.5 rounded-full transition-all ${step >= 2 ? 'bg-[rgb(var(--primary))]' : 'bg-[rgb(var(--border))]'}`} />
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${step >= 2 ? 'bg-[rgb(var(--primary))] text-black shadow-[0_0_12px_rgba(18,252,217,0.3)]' : 'bg-[rgb(var(--card))] text-[rgb(var(--text-muted))]'}`}>2</div>
           </div>
 
           <div className="mb-10">
-            <h1 className="text-3xl font-black text-white tracking-tight">
+            <h1 className="text-3xl font-black text-[rgb(var(--text-primary))] tracking-tight">
               {step === 1 ? 'Tu Cuenta' : 'Workspace'}
             </h1>
             <p className="text-[rgb(var(--text-muted))] text-sm font-semibold uppercase tracking-widest mt-2 flex items-center gap-2">
@@ -125,19 +125,19 @@ export default function Register({ onSwitch }) {
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest">Nombre Completo</label>
                   <input type="text" value={form.fullName} onChange={e => update('fullName', e.target.value)} required
-                    className="w-full bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl px-5 py-3.5 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
+                    className="w-full bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl px-5 py-3.5 text-sm font-medium text-[rgb(var(--text-primary))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
                     placeholder="Santiago Mejía" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest">Email Corporativo</label>
                   <input type="email" value={form.email} onChange={e => update('email', e.target.value)} required
-                    className="w-full bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl px-5 py-3.5 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
+                    className="w-full bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl px-5 py-3.5 text-sm font-medium text-[rgb(var(--text-primary))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
                     placeholder="tu@agencia.com" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest">Contraseña</label>
                   <input type="password" value={form.password} onChange={e => update('password', e.target.value)} required minLength={6}
-                    className="w-full bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl px-5 py-3.5 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
+                    className="w-full bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl px-5 py-3.5 text-sm font-medium text-[rgb(var(--text-primary))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
                     placeholder="Mínimo 6 caracteres" />
                 </div>
                 <button type="submit" className="w-full bg-[rgb(var(--primary))] text-black rounded-2xl py-4 text-sm font-bold hover:bg-[#0dd4b8] transition-all shadow-lg shadow-[rgb(var(--primary))]/10 active:scale-[0.98]">
@@ -148,13 +148,13 @@ export default function Register({ onSwitch }) {
 
             {step === 2 && (
               <>
-                <div className="grid grid-cols-2 gap-3 p-1 bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl">
+                <div className="grid grid-cols-2 gap-3 p-1 bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl">
                   <button type="button" onClick={() => update('orgAction', 'create')}
-                    className={`py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${form.orgAction === 'create' ? 'bg-[#141414] text-[rgb(var(--primary))] border border-[#1c1c1c]' : 'text-[rgb(var(--text-muted))] hover:text-white'}`}>
+                    className={`py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${form.orgAction === 'create' ? 'bg-[rgb(var(--card-hover))] text-[rgb(var(--primary))] border border-[rgb(var(--border))]' : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text-primary))]'}`}>
                     Crear
                   </button>
                   <button type="button" onClick={() => update('orgAction', 'join')}
-                    className={`py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${form.orgAction === 'join' ? 'bg-[#141414] text-[rgb(var(--primary))] border border-[#1c1c1c]' : 'text-[rgb(var(--text-muted))] hover:text-white'}`}>
+                    className={`py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${form.orgAction === 'join' ? 'bg-[rgb(var(--card-hover))] text-[rgb(var(--primary))] border border-[rgb(var(--border))]' : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text-primary))]'}`}>
                     Unirse
                   </button>
                 </div>
@@ -163,14 +163,14 @@ export default function Register({ onSwitch }) {
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest">Nombre de la Agencia</label>
                     <input type="text" value={form.orgName} onChange={e => update('orgName', e.target.value)} required
-                      className="w-full bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl px-5 py-3.5 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
+                      className="w-full bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl px-5 py-3.5 text-sm font-medium text-[rgb(var(--text-primary))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
                       placeholder="Impulsy Digital" />
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-[rgb(var(--text-muted))] uppercase tracking-widest">ID de Organización</label>
                     <input type="text" value={orgCode} onChange={e => setOrgCode(e.target.value)} required
-                      className="w-full bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl px-5 py-3.5 text-sm font-mono text-white focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
+                      className="w-full bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl px-5 py-3.5 text-sm font-mono text-[rgb(var(--text-primary))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--primary))]/50 transition-all placeholder:text-[rgb(var(--text-muted))]"
                       placeholder="ID del owner" />
                   </div>
                 )}
@@ -183,7 +183,7 @@ export default function Register({ onSwitch }) {
 
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(1)}
-                    className="flex items-center justify-center px-6 py-4 border border-[#1c1c1c] bg-[#0c0c0c] text-[rgb(var(--text-muted))] rounded-2xl text-sm font-bold hover:text-white transition-all">
+                    className="flex items-center justify-center px-6 py-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--text-muted))] rounded-2xl text-sm font-bold hover:text-[rgb(var(--text-primary))] transition-all">
                     <ArrowLeft size={18} />
                   </button>
                   <button type="submit" disabled={loading}
@@ -195,7 +195,7 @@ export default function Register({ onSwitch }) {
             )}
           </form>
 
-          <div className="mt-10 pt-8 border-t border-[#1c1c1c] text-center">
+          <div className="mt-10 pt-8 border-t border-[rgb(var(--border))] text-center">
             <p className="text-sm text-[rgb(var(--text-muted))] font-medium">
               ¿Ya tienes cuenta?{' '}
               <button onClick={onSwitch} className="text-[rgb(var(--primary))] hover:text-[#0dd4b8] font-bold ml-1 transition-colors">

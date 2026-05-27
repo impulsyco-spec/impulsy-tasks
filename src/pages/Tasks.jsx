@@ -35,7 +35,7 @@ export default function Tasks() {
 
     let teamsQuery = supabase
       .from('teams')
-      .select('id, name, logo_url')
+      .select('id, name, logo_url, team_members(profile_id)')
       .eq('organization_id', profile.organization_id)
 
     // RESTRICCIONES DE ROL (RBAC)
@@ -173,7 +173,7 @@ export default function Tasks() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-black">
+    <div className="flex items-center justify-center h-screen bg-[rgb(var(--background))]">
       <div className="w-8 h-8 border-4 border-[rgb(var(--primary))] border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -182,8 +182,8 @@ export default function Tasks() {
     <div className="p-4 lg:p-8 max-w-6xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-[#f0f0f0] tracking-tight">Tareas</h1>
-          <p className="text-sm text-[#707070]">Gestiona el flujo de trabajo de tu equipo</p>
+          <h1 className="text-3xl font-black text-[rgb(var(--text-primary))] tracking-tight">Tareas</h1>
+          <p className="text-sm text-[rgb(var(--text-secondary))]">Gestiona el flujo de trabajo de tu equipo</p>
         </div>
         <button 
           onClick={() => { setEditingTask(null); setShowNewTask(true); }}
@@ -202,7 +202,7 @@ export default function Tasks() {
             className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
               selectedTeam === 'all'
                 ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary),0.3)] text-[rgb(var(--primary))]'
-                : 'border-[rgb(var(--border))] bg-black/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
+                : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
             }`}
           >
             <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[10px] font-black">
@@ -210,7 +210,7 @@ export default function Tasks() {
             </div>
             Todos los equipos
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
-              selectedTeam === 'all' ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[#1c1c1c] text-[rgb(var(--text-muted))]'
+              selectedTeam === 'all' ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[rgb(var(--border))] text-[rgb(var(--text-muted))]'
             }`}>{tasks.length}</span>
           </button>
 
@@ -227,7 +227,7 @@ export default function Tasks() {
                 className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
                   isActive
                     ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary),0.3)] text-[rgb(var(--primary))]'
-                    : 'border-[rgb(var(--border))] bg-black/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
+                    : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
                 }`}
               >
                 {logo.type === 'img' ? (
@@ -244,7 +244,7 @@ export default function Tasks() {
                 )}
                 {team.name}
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
-                  isActive ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[#1c1c1c] text-[rgb(var(--text-muted))]'
+                  isActive ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[rgb(var(--border))] text-[rgb(var(--text-muted))]'
                 }`}>{count}</span>
               </button>
             )
@@ -255,7 +255,7 @@ export default function Tasks() {
       {/* Para Subowner/Member solo mostrar etiqueta informativa si solo tiene un equipo */}
       {profile?.role !== 'owner' && teams.length === 1 && (
         <div className="flex items-center gap-2 mb-6">
-          <div className="px-4 py-2 rounded-xl bg-[#0c0c0c] border border-[#1c1c1c] text-[rgb(var(--text-secondary))] text-[10px] font-bold uppercase tracking-widest">
+          <div className="px-4 py-2 rounded-xl bg-[rgb(var(--card))] border border-[rgb(var(--border))] text-[rgb(var(--text-secondary))] text-[10px] font-bold uppercase tracking-widest">
             Equipo: <span className="text-[rgb(var(--primary))]">{teams[0]?.name}</span>
           </div>
         </div>
@@ -263,7 +263,11 @@ export default function Tasks() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered().map(task => (
-          <div key={task.id} className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] transition-all group">
+          <div 
+            key={task.id} 
+            onClick={() => setEditingTask(task)}
+            className="cursor-pointer bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] hover:shadow-md transition-all group"
+          >
             <div className="flex justify-between items-start mb-4">
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                 task.status === 'completed' ? 'bg-green-500/10 text-green-500' :
@@ -273,24 +277,33 @@ export default function Tasks() {
                 {task.status}
               </span>
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => setEditingTask(task)} className="p-2 hover:bg-white/5 rounded-lg text-[#707070] hover:text-white">
+                <button onClick={() => setEditingTask(task)} className="p-2 hover:bg-black/5 rounded-lg text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]">
                   <MoreHorizontal size={16} />
                 </button>
               </div>
             </div>
             
-            <h3 className="text-lg font-bold text-[#f0f0f0] mb-2">{task.title}</h3>
-            <p className="text-sm text-[#707070] line-clamp-2 mb-4">{task.description}</p>
+            <h3 className="text-lg font-bold text-[rgb(var(--text-primary))] mb-2">{task.title}</h3>
             
-            <div className="flex items-center justify-between pt-4 border-t border-[#1c1c1c]">
+            {selectedTeam === 'all' && task.teams && (
+              <div className="mb-2">
+                <span className="px-2 py-0.5 rounded border border-[rgb(var(--border))] bg-[rgb(var(--background))] text-[rgb(var(--text-secondary))] text-[10px] font-bold">
+                  {task.teams.name}
+                </span>
+              </div>
+            )}
+
+            <p className="text-sm text-[rgb(var(--text-secondary))] line-clamp-2 mb-4">{task.description}</p>
+            
+            <div className="flex items-center justify-between pt-4 border-t border-[rgb(var(--border))]">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center text-[10px] font-bold text-[#707070]">
+                <div className="w-8 h-8 rounded-full bg-[rgb(var(--border))] flex items-center justify-center text-[10px] font-bold text-[rgb(var(--text-secondary))]">
                   {task.assigned_profile?.full_name?.substring(0, 2).toUpperCase() || '??'}
                 </div>
-                <span className="text-xs text-[#707070]">{task.assigned_profile?.full_name || 'Sin asignar'}</span>
+                <span className="text-xs text-[rgb(var(--text-secondary))]">{task.assigned_profile?.full_name || 'Sin asignar'}</span>
               </div>
               {task.due_date && (
-                <div className="flex items-center gap-1.5 text-[#707070]">
+                <div className="flex items-center gap-1.5 text-[rgb(var(--text-secondary))]">
                   <Clock size={14} />
                   <span className="text-[10px] font-medium">{new Date(task.due_date).toLocaleDateString()}</span>
                 </div>
@@ -312,6 +325,14 @@ export default function Tasks() {
           profile={profile}
         />
       )}
+
+      {/* FLOAT ACTION BUTTON (MOBILE ONLY) */}
+      <button 
+        onClick={() => { setEditingTask(null); setShowNewTask(true); }}
+        className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-[rgb(var(--primary))] text-black rounded-full shadow-[0_4px_20px_rgba(var(--primary),0.4)] flex items-center justify-center z-50 active:scale-90 transition-transform"
+      >
+        <Plus size={28} />
+      </button>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { Plus, Users, Search, MoreHorizontal, Settings2, Trash2, Camera, UserPlu
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import TeamDrawer from '../components/TeamDrawer'
+import TeamMembersModal from '../components/TeamMembersModal'
 
 export default function Teams() {
   const { profile } = useAuth()
@@ -10,6 +11,7 @@ export default function Teams() {
   const [loading, setLoading] = useState(true)
   const [showNewTeam, setShowNewTeam] = useState(false)
   const [editingTeam, setEditingTeam] = useState(null)
+  const [managingTeam, setManagingTeam] = useState(null)
   const [uploadingLogo, setUploadingLogo] = useState(null)
   const [imageErrors, setImageErrors] = useState({})
 
@@ -80,7 +82,7 @@ export default function Teams() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-black">
+    <div className="flex items-center justify-center h-screen bg-[rgb(var(--background))]">
       <div className="w-8 h-8 border-4 border-[rgb(var(--primary))] border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -89,8 +91,8 @@ export default function Teams() {
     <div className="p-4 lg:p-8 max-w-6xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-[#f0f0f0] tracking-tight">Equipos</h1>
-          <p className="text-sm text-[#707070]">Organiza tus proyectos por células de trabajo</p>
+          <h1 className="text-3xl font-black text-[rgb(var(--text-primary))] tracking-tight">Equipos</h1>
+          <p className="text-sm text-[rgb(var(--text-secondary))]">Organiza tus proyectos por células de trabajo</p>
         </div>
         {profile?.role === 'owner' && (
           <button 
@@ -107,29 +109,29 @@ export default function Teams() {
         {teams.map(t => {
           const logo = getLogoDisplay(t)
           return (
-            <div key={t.id} className="bg-[#0c0c0c] border border-[#1c1c1c] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] transition-all group relative overflow-hidden">
+            <div key={t.id} className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] transition-all group relative overflow-hidden">
               <div className="flex justify-between items-start mb-6">
                 <div className="relative group/logo">
                   {logo.type === 'img' ? (
                     <img 
                       src={logo.src} 
                       alt={t.name} 
-                      className="w-16 h-16 rounded-2xl object-cover border border-[#1c1c1c]"
+                      className="w-16 h-16 rounded-2xl object-cover border border-[rgb(var(--border))]"
                       onError={() => setImageErrors(prev => ({ ...prev, [t.id]: true }))}
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-[rgb(var(--card))] border border-[#1c1c1c] flex items-center justify-center text-xl font-black text-[rgb(var(--primary))]">
+                    <div className="w-16 h-16 rounded-2xl bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-xl font-black text-[rgb(var(--primary))]">
                       {logo.text}
                     </div>
                   )}
                   {profile?.role === 'owner' && (
-                    <label className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl opacity-0 group-hover/logo:opacity-100 cursor-pointer transition-opacity">
+                    <label className="absolute inset-0 flex items-center justify-center bg-[rgb(var(--background))]/60 rounded-2xl opacity-0 group-hover/logo:opacity-100 cursor-pointer transition-opacity">
                       <input type="file" className="hidden" onChange={(e) => uploadLogo(t.id, e.target.files[0])} accept="image/*" />
-                      <Camera size={20} className="text-white" />
+                      <Camera size={20} className="text-[rgb(var(--text-primary))]" />
                     </label>
                   )}
                   {uploadingLogo === t.id && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl">
+                    <div className="absolute inset-0 flex items-center justify-center bg-[rgb(var(--background))]/60 rounded-2xl">
                       <div className="w-5 h-5 border-2 border-[rgb(var(--primary))] border-t-transparent rounded-full animate-spin" />
                     </div>
                   )}
@@ -139,13 +141,13 @@ export default function Teams() {
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={(e) => { e.stopPropagation(); setEditingTeam(t); setShowNewTeam(true); }}
-                      className="p-2 hover:bg-white/5 rounded-lg text-[#707070] hover:text-white transition-colors"
+                      className="p-2 hover:bg-black/5 rounded-lg text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors"
                     >
                       <Settings2 size={16} />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); deleteTeam(t.id); }}
-                      className="p-2 hover:bg-red-500/10 rounded-lg text-[#707070] hover:text-red-500 transition-colors"
+                      className="p-2 hover:bg-red-500/10 rounded-lg text-[rgb(var(--text-secondary))] hover:text-red-500 transition-colors"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -153,21 +155,24 @@ export default function Teams() {
                 )}
               </div>
 
-              <h3 className="text-xl font-bold text-[#f0f0f0] mb-1">{t.name}</h3>
-              <p className="text-sm text-[#707070] mb-6 line-clamp-2">{t.description || 'Sin descripción'}</p>
+              <h3 className="text-xl font-bold text-[rgb(var(--text-primary))] mb-1">{t.name}</h3>
+              <p className="text-sm text-[rgb(var(--text-secondary))] mb-6 line-clamp-2">{t.description || 'Sin descripción'}</p>
 
-              <div className="flex items-center justify-between pt-6 border-t border-[#1c1c1c]">
+              <div className="flex items-center justify-between pt-6 border-t border-[rgb(var(--border))]">
                 <div className="flex -space-x-2">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0c0c0c] bg-[#1c1c1c] flex items-center justify-center text-[10px] font-bold text-[#707070]">
+                    <div key={i} className="w-8 h-8 rounded-full border-2 border-[rgb(var(--card))] bg-[rgb(var(--border))] flex items-center justify-center text-[10px] font-bold text-[rgb(var(--text-secondary))]">
                       U{i}
                     </div>
                   ))}
-                  <div className="w-8 h-8 rounded-full border-2 border-[#0c0c0c] bg-[#0c0c0c] flex items-center justify-center text-[10px] font-bold text-[rgb(var(--primary))]">
+                  <div className="w-8 h-8 rounded-full border-2 border-[rgb(var(--card))] bg-[rgb(var(--card))] flex items-center justify-center text-[10px] font-bold text-[rgb(var(--primary))]">
                     +5
                   </div>
                 </div>
-                <button className="text-xs font-bold text-[rgb(var(--primary))] hover:underline flex items-center gap-1 group/link">
+                <button 
+                  onClick={() => setManagingTeam(t)}
+                  className="text-xs font-bold text-[rgb(var(--primary))] hover:underline flex items-center gap-1 group/link"
+                >
                   Ver equipo <ChevronRight size={14} className="group-hover/link:translate-x-0.5 transition-transform" />
                 </button>
               </div>
@@ -187,6 +192,16 @@ export default function Teams() {
             setShowNewTeam(false)
             setEditingTeam(null)
           }}
+        />
+      )}
+
+      {/* MODAL DE GESTIÓN DE MIEMBROS */}
+      {managingTeam && (
+        <TeamMembersModal
+          isOpen={!!managingTeam}
+          onClose={() => setManagingTeam(null)}
+          team={managingTeam}
+          profile={profile}
         />
       )}
     </div>

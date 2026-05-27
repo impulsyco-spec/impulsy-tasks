@@ -48,15 +48,10 @@ export default function Layout({ children }) {
     ...(isAdmin ? [{ to: '/teams', label: 'Equipo' }] : []),
   ]
 
-  const handleSaveTask = async (task) => {
-    // TODO: Implementar lógica de guardar tarea global
-    setIsDrawerOpen(false)
-  }
-
   return (
-    <div className="flex flex-col h-screen bg-black">
+    <div className="flex flex-col h-screen bg-[rgb(var(--background))]">
       {/* ── TOP NAV ── */}
-      <nav className="bg-black/80 backdrop-blur-xl border-b border-[rgb(var(--border))] h-14 sticky top-0 z-50 flex items-center justify-between px-6 flex-shrink-0">
+      <nav className="bg-[rgb(var(--background))]/80 backdrop-blur-xl border-b border-[rgb(var(--border))] h-14 sticky top-0 z-50 flex items-center justify-between px-6 flex-shrink-0">
         
         {/* Izquierda: Logo y Cliente y Tabs */}
         <div className="flex items-center gap-6">
@@ -98,8 +93,8 @@ export default function Layout({ children }) {
               className={({ isActive }) => 
                 `w-9 h-9 rounded-xl flex items-center justify-center transition-all relative ${
                   isActive 
-                    ? 'bg-[#141414] text-[rgb(var(--primary))]' 
-                    : 'text-[rgb(var(--text-muted))] hover:bg-[#141414] hover:text-[rgb(var(--text-secondary))]'
+                    ? 'bg-[rgb(var(--card-hover))] text-[rgb(var(--primary))]' 
+                    : 'text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--card-hover))] hover:text-[rgb(var(--text-secondary))]'
                 }`
               }
             >
@@ -116,8 +111,8 @@ export default function Layout({ children }) {
               className={({ isActive }) => 
                 `w-9 h-9 rounded-xl flex items-center justify-center transition-all relative ${
                   isActive 
-                    ? 'bg-[#141414] text-[rgb(var(--primary))]' 
-                    : 'text-[rgb(var(--text-muted))] hover:bg-[#141414] hover:text-[rgb(var(--text-secondary))]'
+                    ? 'bg-[rgb(var(--card-hover))] text-[rgb(var(--primary))]' 
+                    : 'text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--card-hover))] hover:text-[rgb(var(--text-secondary))]'
                 }`
               }
             >
@@ -128,7 +123,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-3">
             <button 
               onClick={handleLogout} 
-              className="bg-[#0c0c0c] border border-[rgb(var(--border))] text-[rgb(var(--text-muted))] rounded-xl px-2 py-1 flex items-center gap-2 hover:border-red-500/50 hover:text-red-400 transition-all group"
+              className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] text-[rgb(var(--text-muted))] rounded-xl px-2 py-1 flex items-center gap-2 hover:border-red-500/50 hover:text-red-400 transition-all group"
               title="Cerrar sesión"
             >
               <div className="w-7 h-7 bg-[rgb(var(--card))] rounded-lg flex items-center justify-center text-[10px] font-black text-[rgb(var(--primary))] border border-[rgb(var(--border))] group-hover:border-[rgb(var(--primary))/20]">
@@ -154,7 +149,7 @@ export default function Layout({ children }) {
       </main>
 
       {/* ── BOTTOM NAV (MOBILE ONLY) ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-[rgb(var(--border))] h-16 z-50 flex items-center justify-around px-4">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[rgb(var(--background))]/80 backdrop-blur-xl border-t border-[rgb(var(--border))] h-16 z-50 flex items-center justify-around px-4">
         <NavLink to="/tasks" className={({ isActive }) => `flex flex-col items-center gap-1 transition-all ${isActive ? 'text-[rgb(var(--primary))]' : 'text-[rgb(var(--text-muted))]'}`}>
           <div className={`p-1.5 rounded-lg transition-all ${location.pathname === '/tasks' ? 'bg-[rgb(var(--primary),0.1)]' : ''}`}>
             <ListTodo size={20} />
@@ -187,19 +182,6 @@ export default function Layout({ children }) {
         </NavLink>
       </nav>
 
-      {/* ── FLOAT ACTION BUTTON (MOBILE ONLY) ── */}
-      <button 
-        onClick={() => setIsDrawerOpen(true)}
-        className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-[rgb(var(--primary))] text-black rounded-full shadow-[0_4px_20px_rgba(var(--primary),0.4)] flex items-center justify-center z-50 active:scale-90 transition-transform"
-      >
-        <Plus size={28} />
-      </button>
-
-      <TaskDrawer 
-        abierto={isDrawerOpen} 
-        onCerrar={() => setIsDrawerOpen(false)} 
-        onGuardar={handleSaveTask} 
-      />
     </div>
   )
 }

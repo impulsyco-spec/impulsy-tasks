@@ -4,7 +4,7 @@ export default function WelcomeBanner({ nombre, completadas, total, urgentes, po
   const hoy = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
-    <div className="relative overflow-hidden bg-[#0c0c0c] border border-[#1c1c1c] rounded-[14px] p-6 mb-6">
+    <div className="relative overflow-hidden bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-[14px] p-6 mb-6">
       
       {/* Glow decorativo */}
       <div className="absolute -top-10 -left-10 w-48 h-48 pointer-events-none"
@@ -13,10 +13,10 @@ export default function WelcomeBanner({ nombre, completadas, total, urgentes, po
       {/* Fila superior */}
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
         <div>
-          <p className="text-[10px] sm:text-xs text-[#707070] font-medium mb-1">
+          <p className="text-[10px] sm:text-xs text-[rgb(var(--text-secondary))] font-medium mb-1">
             Hola, {nombre} 👋 — {hoy}
           </p>
-          <p className="text-base sm:text-lg font-bold text-[#f0f0f0] leading-tight sm:leading-snug">
+          <p className="text-base sm:text-lg font-bold text-[rgb(var(--text-primary))] leading-tight sm:leading-snug">
             Esta semana solo te faltan{' '}
             <span className="text-[#12fcd9]">{faltantes} {faltantes === 1 ? 'tarea' : 'tareas'}</span>{' '}
             para que sigamos avanzando.
@@ -26,22 +26,22 @@ export default function WelcomeBanner({ nombre, completadas, total, urgentes, po
         <div className="flex gap-4 sm:gap-5 flex-shrink-0 relative z-10 w-full sm:w-auto justify-between sm:justify-end">
           <div className="text-right">
             <p className="text-xl sm:text-2xl font-extrabold text-[#ff4545] leading-none">{urgentes}</p>
-            <p className="text-[9px] sm:text-[10px] text-[#404040] uppercase tracking-wider mt-1">Urgentes</p>
+            <p className="text-[9px] sm:text-[10px] text-[rgb(var(--text-muted))] uppercase tracking-wider mt-1">Urgentes</p>
           </div>
           <div className="text-right">
             <p className="text-xl sm:text-2xl font-extrabold text-[#f5a623] leading-none">{porAprobar}</p>
-            <p className="text-[9px] sm:text-[10px] text-[#404040] uppercase tracking-wider mt-1">Revisar</p>
+            <p className="text-[9px] sm:text-[10px] text-[rgb(var(--text-muted))] uppercase tracking-wider mt-1">Revisar</p>
           </div>
           <div className="text-right">
             <p className="text-xl sm:text-2xl font-extrabold text-[#12fcd9] leading-none">{completadas}/{total}</p>
-            <p className="text-[9px] sm:text-[10px] text-[#404040] uppercase tracking-wider mt-1">Avance</p>
+            <p className="text-[9px] sm:text-[10px] text-[rgb(var(--text-muted))] uppercase tracking-wider mt-1">Avance</p>
           </div>
         </div>
       </div>
 
       {/* Barra de progreso */}
       <div className="flex items-center gap-3 relative z-10">
-        <div className="flex-1 h-1.5 bg-[#252525] rounded-full overflow-hidden">
+        <div className="flex-1 h-1.5 bg-[rgb(var(--border-hover))] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full bg-[#12fcd9] transition-all duration-500"
             style={{ width: `${porcentaje}%`, boxShadow: '0 0 10px rgba(18,252,217,0.25)' }}

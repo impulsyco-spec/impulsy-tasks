@@ -60,7 +60,7 @@ export default function Notifications() {
     <div className="p-4 lg:p-8 max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight">Notificaciones</h2>
+          <h2 className="text-3xl font-black text-[rgb(var(--text-primary))] tracking-tight">Notificaciones</h2>
           {unreadCount > 0 && (
             <div className="flex items-center gap-2 mt-2">
               <span className="w-2 h-2 bg-[rgb(var(--primary))] rounded-full animate-pulse" />
@@ -79,10 +79,10 @@ export default function Notifications() {
         )}
       </div>
 
-      <div className="bg-[#0c0c0c] rounded-2xl border border-[rgb(var(--border))] overflow-hidden shadow-sm">
+      <div className="bg-[rgb(var(--card))] rounded-2xl border border-[rgb(var(--border))] overflow-hidden shadow-sm">
         {notifications.length === 0 ? (
           <div className="p-20 text-center relative overflow-hidden">
-            <div className="w-16 h-16 bg-[#141414] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[rgb(var(--border))]">
+            <div className="w-16 h-16 bg-[rgb(var(--card-hover))] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[rgb(var(--border))]">
               <Bell size={24} className="text-[rgb(var(--text-muted))] opacity-40" />
             </div>
             <h3 className="text-[rgb(var(--text-secondary))] font-black uppercase tracking-widest text-xs">No tienes notificaciones</h3>
@@ -92,11 +92,11 @@ export default function Notifications() {
             {notifications.map(notif => (
               <div
                 key={notif.id}
-                className={`flex items-start gap-4 px-8 py-5 transition-all duration-300 ${!notif.read ? 'bg-[rgb(var(--primary),0.03)] border-l-2 border-l-[rgb(var(--primary))]' : 'hover:bg-[#141414]/50 border-l-2 border-l-transparent'}`}
+                className={`flex items-start gap-4 px-8 py-5 transition-all duration-300 ${!notif.read ? 'bg-[rgb(var(--primary),0.03)] border-l-2 border-l-[rgb(var(--primary))]' : 'hover:bg-[rgb(var(--card-hover))]/50 border-l-2 border-l-transparent'}`}
               >
                 <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${!notif.read ? 'bg-[rgb(var(--primary))]' : 'bg-transparent'}`} />
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm leading-relaxed ${!notif.read ? 'text-white font-bold' : 'text-[rgb(var(--text-secondary))] font-medium'}`}>
+                  <p className={`text-sm leading-relaxed ${!notif.read ? 'text-[rgb(var(--text-primary))] font-bold' : 'text-[rgb(var(--text-secondary))] font-medium'}`}>
                     {notif.message}
                   </p>
                   <div className="flex items-center gap-3 mt-2">

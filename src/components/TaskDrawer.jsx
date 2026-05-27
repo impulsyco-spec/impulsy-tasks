@@ -29,26 +29,33 @@ export default function TaskDrawer({ isOpen, onClose, onSave, task = null, membe
 
   const set = (campo, valor) => setForm(f => ({ ...f, [campo]: valor }))
 
+  const selectedTeamData = form.team_id ? teams.find(t => t.id === form.team_id) : null
+  const validMemberIds = selectedTeamData?.team_members?.map(tm => tm.profile_id)
+  
+  const filteredMembers = validMemberIds
+    ? members.filter(m => validMemberIds.includes(m.id))
+    : members
+
   if (!isOpen) return null
 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-[rgb(var(--background))]/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-[400px] max-w-full z-50
-                      bg-[#0c0c0c] border-l border-[#1c1c1c] flex flex-col
+                      bg-[rgb(var(--card))] border-l border-[rgb(var(--border))] flex flex-col
                       animate-in slide-in-from-right duration-200">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1c1c1c]">
-          <h2 className="text-sm font-bold text-[#f0f0f0]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[rgb(var(--border))]">
+          <h2 className="text-sm font-bold text-[rgb(var(--text-primary))]">
             {task ? 'Editar tarea' : 'Nueva tarea'}
           </h2>
           <button onClick={onClose}
-            className="w-7 h-7 rounded-[6px] text-[#404040] text-sm flex items-center justify-center
-                       hover:bg-[#141414] hover:text-[#c8c8c8] transition-all">✕</button>
+            className="w-7 h-7 rounded-[6px] text-[rgb(var(--text-muted))] text-sm flex items-center justify-center
+                       hover:bg-[rgb(var(--card-hover))] hover:text-[rgb(var(--text-primary))] transition-all">✕</button>
         </div>
 
         {/* Campos */}
@@ -59,20 +66,20 @@ export default function TaskDrawer({ isOpen, onClose, onSave, task = null, membe
             <input value={form.title} onChange={e => set('title', e.target.value)}
               placeholder="¿Qué hay que hacer?"
               className="w-full bg-transparent border-none outline-none text-base font-semibold
-                         text-[#f0f0f0] placeholder:text-[#404040]" />
-            <div className="h-px bg-[#1c1c1c] mt-2" />
+                         text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-muted))]" />
+            <div className="h-px bg-[rgb(var(--border))] mt-2" />
           </div>
 
           {/* Descripción */}
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--text-muted))] block mb-2">
               Descripción
             </label>
             <textarea value={form.description} onChange={e => set('description', e.target.value)}
               placeholder="Contexto o instrucciones..."
               rows={3}
-              className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
-                         text-xs text-[#c8c8c8] placeholder:text-[#404040]
+              className="w-full bg-[rgb(var(--card-hover))] border border-[rgb(var(--border))] rounded-[8px]
+                         text-xs text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-muted))]
                          px-3 py-2.5 resize-none outline-none
                          focus:border-[rgba(18,252,217,0.3)] transition-colors" />
           </div>
@@ -80,37 +87,37 @@ export default function TaskDrawer({ isOpen, onClose, onSave, task = null, membe
           {/* Asignado + Fecha + Equipo */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--text-muted))] block mb-2">
                 Asignado a
               </label>
               <select value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)}
-                className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
-                           text-xs text-[#c8c8c8] px-3 py-2.5 outline-none
+                className="w-full bg-[rgb(var(--card-hover))] border border-[rgb(var(--border))] rounded-[8px]
+                           text-xs text-[rgb(var(--text-primary))] px-3 py-2.5 outline-none
                            focus:border-[rgba(18,252,217,0.3)] transition-colors appearance-none">
                 <option value="">Sin asignar</option>
-                {members.map(m => (
+                {filteredMembers.map(m => (
                   <option key={m.id} value={m.id}>{m.full_name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--text-muted))] block mb-2">
                 Fecha límite
               </label>
               <input type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)}
-                className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
-                           text-xs text-[#707070] px-3 py-2.5 outline-none
+                className="w-full bg-[rgb(var(--card-hover))] border border-[rgb(var(--border))] rounded-[8px]
+                           text-xs text-[rgb(var(--text-secondary))] px-3 py-2.5 outline-none
                            focus:border-[rgba(18,252,217,0.3)] transition-colors" />
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-[#404040] block mb-2">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[rgb(var(--text-muted))] block mb-2">
               Equipo
             </label>
             <select value={form.team_id} onChange={e => set('team_id', e.target.value)}
-              className="w-full bg-[#141414] border border-[#1c1c1c] rounded-[8px]
-                         text-xs text-[#c8c8c8] px-3 py-2.5 outline-none
+              className="w-full bg-[rgb(var(--card-hover))] border border-[rgb(var(--border))] rounded-[8px]
+                         text-xs text-[rgb(var(--text-primary))] px-3 py-2.5 outline-none
                          focus:border-[rgba(18,252,217,0.3)] transition-colors appearance-none">
               <option value="">Sin equipo</option>
               {teams.map(t => (
@@ -121,9 +128,9 @@ export default function TaskDrawer({ isOpen, onClose, onSave, task = null, membe
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#1c1c1c] flex items-center justify-end gap-2">
+        <div className="px-6 py-4 border-t border-[rgb(var(--border))] flex items-center justify-end gap-2">
           <button onClick={onClose}
-            className="text-xs text-[#404040] hover:text-[#707070] px-4 py-2 transition-colors">
+            className="text-xs text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text-secondary))] px-4 py-2 transition-colors">
             Cancelar
           </button>
           <button onClick={() => onSave(form)}
