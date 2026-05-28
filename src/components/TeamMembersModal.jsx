@@ -13,30 +13,39 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
   const isOwner = profile?.role === 'owner' || profile?.role === 'manager'
 
   useEffect(() => {
-    if (isOpen && team) {
+    if (isOpen && team?.id && profile?.organization_id) {
       fetchData()
     }
-  }, [isOpen, team])
+  }, [isOpen, team, profile])
 
   async function fetchData() {
     setLoading(true)
     
     // Fetch all profiles in the org
-    const { data: allProfiles } = await supabase
+    const { data: allProfiles, error: allProfilesError } = await supabase
       .from('profiles')
       .select('id, full_name, role, email')
-      .eq('organization_id', profile.organization_id)
+      .eq('organization_id', profile?.organization_id)
       .order('full_name')
 
+    if (allProfilesError) console.error("Error fetching all profiles:", allProfilesError)
+
     // Fetch team members
-    const { data: teamMembers } = await supabase
+    const { data: teamMembers, error: teamMembersError } = await supabase
       .from('team_members')
       .select('profile_id, profiles(id, full_name, role, email)')
-      .eq('team_id', team.id)
+      .eq('team_id', team?.id)
+
+    if (teamMembersError) console.error("Error fetching team members:", teamMembersError)
 
     const memberIds = new Set(teamMembers?.map(tm => tm.profile_id) || [])
     
-    const mappedMembers = teamMembers?.map(tm => tm.profiles) || []
+    // Safely map members, handling if profiles is an array or object
+    const mappedMembers = teamMembers?.map(tm => {
+      if (Array.isArray(tm.profiles)) return tm.profiles[0]
+      return tm.profiles
+    }).filter(Boolean) || []
+    
     setMembers(mappedMembers)
 
     // Filter available users (not in team)
@@ -88,10 +97,12 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
 
   if (!isOpen) return null
 
-  const filteredMembers = members.filter(m => 
-    m?.full_name?.toLowerCase().includes(search.toLowerCase()) || 
-    m?.email?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredMembers = members.filter(m => {
+    const n = m?.full_name?.toLowerCase() || ''
+    const e = m?.email?.toLowerCase() || ''
+    const s = search.toLowerCase()
+    return n.includes(s) || e.includes(s)
+  })
 
   return (
     <>
