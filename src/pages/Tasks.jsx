@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Filter, Search, MoreHorizontal, CheckCircle2, Clock, AlertCircle, ChevronRight, LayoutGrid, List as ListIcon, Calendar as CalendarIcon, User, Tag, ArrowRight } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import TaskDrawer from '../components/TaskDrawer'
@@ -9,6 +10,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([])
   const [teams, setTeams] = useState([])
   const [members, setMembers] = useState([])
+  const location = useLocation()
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('grid')
   const [selectedTeam, setSelectedTeam] = useState('all')
@@ -25,13 +27,15 @@ export default function Tasks() {
   useEffect(() => {
     if (!profile?.organization_id) return
     fetchAll()
-    
-    // Check if we navigated here with #new to automatically open the drawer
-    if (window.location.hash === '#new') {
-      setShowNewTask(true)
-      window.history.replaceState(null, '', '/tasks')
-    }
   }, [profile])
+    
+  useEffect(() => {
+    // Check if we navigated here with #new to automatically open the drawer
+    if (location.hash === '#new') {
+      setShowNewTask(true)
+      window.history.replaceState(null, '', location.pathname)
+    }
+  }, [location])
 
   async function fetchAll() {
     let tasksQuery = supabase
