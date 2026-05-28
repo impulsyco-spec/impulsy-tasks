@@ -87,8 +87,8 @@ export default function Register({ onSwitch }) {
                 <CheckCircle2 size={20} className="text-[rgb(var(--primary))]" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm tracking-tight">{item.t}</p>
-                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">{item.d}</p>
+                <p className="text-black font-black text-sm tracking-tight">{item.t}</p>
+                <p className="text-black font-bold text-xs uppercase tracking-wider">{item.d}</p>
               </div>
             </div>
           ))}

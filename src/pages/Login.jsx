@@ -43,15 +43,15 @@ export default function Login({ onSwitch }) {
             <div className="w-10 h-10 bg-[rgb(var(--primary))]/10 rounded-xl flex items-center justify-center mb-3 border border-[rgb(var(--primary))]/20">
               <Zap size={20} className="text-[rgb(var(--primary))]" />
             </div>
-            <p className="text-white font-bold text-sm uppercase tracking-widest mb-1">IA Activa</p>
-            <p className="text-gray-500 text-xs font-medium leading-relaxed uppercase tracking-wider">Extracción de tareas inteligente</p>
+            <p className="text-black font-black text-sm uppercase tracking-widest mb-1">IA Activa</p>
+            <p className="text-black font-bold text-xs leading-relaxed uppercase tracking-wider">Extracción de tareas inteligente</p>
           </div>
           <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl p-6 flex-1 hover:border-[rgb(var(--primary))]/30 transition-all">
              <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3 border border-indigo-500/20">
               <Users size={20} className="text-indigo-400" />
             </div>
-            <p className="text-white font-bold text-sm uppercase tracking-widest mb-1">Equipos</p>
-            <p className="text-gray-500 text-xs font-medium leading-relaxed uppercase tracking-wider">Colaboración de alto nivel</p>
+            <p className="text-black font-black text-sm uppercase tracking-widest mb-1">Equipos</p>
+            <p className="text-black font-bold text-xs leading-relaxed uppercase tracking-wider">Colaboración de alto nivel</p>
           </div>
         </div>
       </div>
