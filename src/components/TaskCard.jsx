@@ -46,8 +46,8 @@ export default function TaskCard({ task, members, isAdmin, today, onEdit, onAppr
 
   return (
     <div
-      className="group relative flex bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-[10px] mb-1.5
-                 hover:bg-[rgb(var(--card-hover))] hover:border-[rgb(var(--border-hover))] cursor-pointer transition-all duration-150"
+      className={`group relative flex bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-[10px] mb-1.5
+                 hover:bg-[rgb(var(--card-hover))] hover:border-[rgb(var(--border-hover))] cursor-pointer transition-all duration-150 ${task.status === 'completed' ? 'opacity-60 grayscale hover:opacity-100' : ''}`}
       style={{ borderLeft: `3px solid ${borderColor}` }}
     >
       {/* Cuerpo */}

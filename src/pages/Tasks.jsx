@@ -266,7 +266,7 @@ export default function Tasks() {
           <div 
             key={task.id} 
             onClick={() => setEditingTask(task)}
-            className="cursor-pointer bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] hover:shadow-md transition-all group"
+            className={`cursor-pointer bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl p-6 hover:border-[rgb(var(--primary),0.3)] hover:shadow-md transition-all group ${task.status === 'completed' ? 'opacity-60 grayscale hover:opacity-100' : ''}`}
           >
             <div className="flex justify-between items-start mb-4">
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
