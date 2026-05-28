@@ -9,7 +9,7 @@ export default function Logo({ size = 'md', className = '' }) {
 
   return (
     <div className={`flex items-baseline gap-1.5 leading-none select-none ${s} ${className}`}>
-      <span className="font-black tracking-tighter text-[rgb(var(--text-primary))]">
+      <span className="font-black tracking-tighter text-current">
         IMPULSY
       </span>
       <span className="font-black tracking-tighter text-[rgb(var(--primary))]">

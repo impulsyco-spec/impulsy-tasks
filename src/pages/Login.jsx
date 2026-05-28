@@ -26,14 +26,14 @@ export default function Login({ onSwitch }) {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px] -ml-32 -mb-32" />
         
         <div className="relative z-10">
-          <Logo size="lg" />
+          <Logo size="lg" className="text-white" />
         </div>
 
         <div className="relative z-10 max-w-md">
-          <h2 className="text-5xl font-black text-[rgb(var(--text-primary))] leading-[1.1] mb-6 tracking-tight">
+          <h2 className="text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
             Gestión inteligente de <span className="text-[rgb(var(--primary))]">tareas y equipos.</span>
           </h2>
-          <p className="text-[rgb(var(--text-secondary))] text-lg leading-relaxed font-medium">
+          <p className="text-gray-400 text-lg leading-relaxed font-medium">
             Impulsy Task combina IA avanzada con una interfaz Clean Tech para maximizar la productividad de tu agencia.
           </p>
         </div>
@@ -43,15 +43,15 @@ export default function Login({ onSwitch }) {
             <div className="w-10 h-10 bg-[rgb(var(--primary))]/10 rounded-xl flex items-center justify-center mb-3 border border-[rgb(var(--primary))]/20">
               <Zap size={20} className="text-[rgb(var(--primary))]" />
             </div>
-            <p className="text-[rgb(var(--text-primary))] font-bold text-sm uppercase tracking-widest mb-1">IA Activa</p>
-            <p className="text-[rgb(var(--text-muted))] text-xs font-medium leading-relaxed uppercase tracking-wider">Extracción de tareas inteligente</p>
+            <p className="text-white font-bold text-sm uppercase tracking-widest mb-1">IA Activa</p>
+            <p className="text-gray-500 text-xs font-medium leading-relaxed uppercase tracking-wider">Extracción de tareas inteligente</p>
           </div>
           <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-2xl p-6 flex-1 hover:border-[rgb(var(--primary))]/30 transition-all">
              <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3 border border-indigo-500/20">
               <Users size={20} className="text-indigo-400" />
             </div>
-            <p className="text-[rgb(var(--text-primary))] font-bold text-sm uppercase tracking-widest mb-1">Equipos</p>
-            <p className="text-[rgb(var(--text-muted))] text-xs font-medium leading-relaxed uppercase tracking-wider">Colaboración de alto nivel</p>
+            <p className="text-white font-bold text-sm uppercase tracking-widest mb-1">Equipos</p>
+            <p className="text-gray-500 text-xs font-medium leading-relaxed uppercase tracking-wider">Colaboración de alto nivel</p>
           </div>
         </div>
       </div>

@@ -64,14 +64,14 @@ export default function Register({ onSwitch }) {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px] -ml-32 -mb-32" />
         
         <div className="relative z-10">
-          <Logo size="lg" />
+          <Logo size="lg" className="text-white" />
         </div>
 
         <div className="relative z-10 max-w-md">
-          <h2 className="text-5xl font-black text-[rgb(var(--text-primary))] leading-[1.1] mb-6 tracking-tight">
+          <h2 className="text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
             Lleva tu agencia al <span className="text-[rgb(var(--primary))]">siguiente nivel.</span>
           </h2>
-          <p className="text-[rgb(var(--text-secondary))] text-lg leading-relaxed font-medium">
+          <p className="text-gray-400 text-lg leading-relaxed font-medium">
             Crea una organización profesional, gestiona clientes y delega con total claridad.
           </p>
         </div>
@@ -87,8 +87,8 @@ export default function Register({ onSwitch }) {
                 <CheckCircle2 size={20} className="text-[rgb(var(--primary))]" />
               </div>
               <div>
-                <p className="text-[rgb(var(--text-primary))] font-bold text-sm tracking-tight">{item.t}</p>
-                <p className="text-[rgb(var(--text-muted))] text-xs font-medium uppercase tracking-wider">{item.d}</p>
+                <p className="text-white font-bold text-sm tracking-tight">{item.t}</p>
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">{item.d}</p>
               </div>
             </div>
           ))}
