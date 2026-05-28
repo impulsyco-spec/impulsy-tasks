@@ -202,7 +202,7 @@ export default function Tasks() {
             className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
               selectedTeam === 'all'
                 ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary))] text-black'
-                : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
+                : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-black hover:border-[rgb(var(--border-hover))] hover:text-black'
             }`}
           >
             <div className="w-6 h-6 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))] flex items-center justify-center text-[10px] font-black">
@@ -227,7 +227,7 @@ export default function Tasks() {
                 className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
                   isActive
                     ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary))] text-black'
-                    : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
+                    : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-black hover:border-[rgb(var(--border-hover))] hover:text-black'
                 }`}
               >
                 {logo.type === 'img' ? (
