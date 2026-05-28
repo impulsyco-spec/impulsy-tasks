@@ -5,8 +5,8 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#4f46e5',
-          glow: 'rgba(79, 70, 229, 0.25)',
+          DEFAULT: '#12fcd9',
+          glow: 'rgba(18, 252, 217, 0.25)',
         },
       },
     },

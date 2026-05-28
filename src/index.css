@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --primary: 79 70 229; /* Indigo 600 */
-    --primary-foreground: 255 255 255;
+    --primary: 18 252 217; /* #12fcd9 */
+    --primary-foreground: 0 0 0; /* Changed to black for contrast against the bright cyan */
     --background: 248 250 252; /* Slate 50 */
     --card: 255 255 255; /* White */
     --card-hover: 241 245 249; /* Slate 100 */
@@ -15,7 +15,7 @@
     --text-primary: 30 41 59; /* Slate 800 */
     --text-secondary: 71 85 105; /* Slate 600 */
     --text-muted: 100 116 139; /* Slate 500 */
-    --ring: 79 70 229;
+    --ring: 18 252 217;
     --radius: 0.625rem;
     --urgent: 239 68 68; /* Red 500 */
     --warning: 245 158 11; /* Amber 500 */
