@@ -25,6 +25,12 @@ export default function Tasks() {
   useEffect(() => {
     if (!profile?.organization_id) return
     fetchAll()
+    
+    // Check if we navigated here with #new to automatically open the drawer
+    if (window.location.hash === '#new') {
+      setShowNewTask(true)
+      window.history.replaceState(null, '', '/tasks')
+    }
   }, [profile])
 
   async function fetchAll() {

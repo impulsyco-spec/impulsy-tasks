@@ -11,7 +11,6 @@ export default function Layout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [unread, setUnread] = useState(0)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -133,7 +132,7 @@ export default function Layout({ children }) {
             </button>
 
             <button 
-              onClick={() => setIsDrawerOpen(true)}
+              onClick={() => navigate('/tasks#new')}
               className="hidden md:flex bg-[rgb(var(--primary))] text-black text-xs font-black rounded-xl h-[36px] px-5 hover:shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:brightness-110 transition-all items-center gap-2 active:scale-95"
             >
               <span className="text-lg leading-none">+</span>
