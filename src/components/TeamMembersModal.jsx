@@ -24,7 +24,7 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
     // Fetch all profiles in the org
     const { data: allProfiles, error: allProfilesError } = await supabase
       .from('profiles')
-      .select('id, full_name, role, email')
+      .select('id, full_name, role')
       .eq('organization_id', profile?.organization_id)
       .order('full_name')
 
@@ -33,7 +33,7 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
     // Fetch team members
     const { data: teamMembers, error: teamMembersError } = await supabase
       .from('team_members')
-      .select('profile_id, profiles(id, full_name, role, email)')
+      .select('profile_id, profiles(id, full_name, role)')
       .eq('team_id', team?.id)
 
     if (teamMembersError) console.error("Error fetching team members:", teamMembersError)
@@ -99,9 +99,8 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
 
   const filteredMembers = members.filter(m => {
     const n = m?.full_name?.toLowerCase() || ''
-    const e = m?.email?.toLowerCase() || ''
     const s = search.toLowerCase()
-    return n.includes(s) || e.includes(s)
+    return n.includes(s)
   })
 
   return (
@@ -134,7 +133,7 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
                 >
                   <option value="">Selecciona un usuario...</option>
                   {availableUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>
+                    <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
                   ))}
                 </select>
                 <button 
@@ -181,7 +180,7 @@ export default function TeamMembersModal({ isOpen, onClose, team, profile }) {
                           {m.full_name}
                           {m.role === 'owner' && <Shield size={12} className="text-[rgb(var(--primary))]" />}
                         </p>
-                        <p className="text-xs text-[rgb(var(--text-secondary))]">{m.email}</p>
+                        <p className="text-xs text-[rgb(var(--text-secondary))] capitalize">{m.role}</p>
                       </div>
                     </div>
                     {isOwner && (
