@@ -201,7 +201,7 @@ export default function Tasks() {
             onClick={() => setSelectedTeam('all')}
             className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
               selectedTeam === 'all'
-                ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary),0.3)] text-[rgb(var(--primary))]'
+                ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary))] text-black'
                 : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
             }`}
           >
@@ -210,7 +210,7 @@ export default function Tasks() {
             </div>
             Todos los equipos
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
-              selectedTeam === 'all' ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[rgb(var(--border))] text-[rgb(var(--text-muted))]'
+              selectedTeam === 'all' ? 'bg-[rgb(var(--primary))] text-black' : 'bg-[rgb(var(--border))] text-[rgb(var(--text-muted))]'
             }`}>{tasks.length}</span>
           </button>
 
@@ -226,7 +226,7 @@ export default function Tasks() {
                 onClick={() => setSelectedTeam(team.id)}
                 className={`flex items-center gap-3 h-10 px-4 rounded-xl border text-xs font-bold flex-shrink-0 transition-all ${
                   isActive
-                    ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary),0.3)] text-[rgb(var(--primary))]'
+                    ? 'bg-[rgb(var(--primary),0.1)] border-[rgb(var(--primary))] text-black'
                     : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]/40 text-[rgb(var(--text-muted))] hover:border-[rgb(var(--border-hover))] hover:text-[rgb(var(--text-secondary))]'
                 }`}
               >
@@ -244,7 +244,7 @@ export default function Tasks() {
                 )}
                 {team.name}
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${
-                  isActive ? 'bg-[rgb(var(--primary),0.2)] text-[rgb(var(--primary))]' : 'bg-[rgb(var(--border))] text-[rgb(var(--text-muted))]'
+                  isActive ? 'bg-[rgb(var(--primary))] text-black' : 'bg-[rgb(var(--border))] text-[rgb(var(--text-muted))]'
                 }`}>{count}</span>
               </button>
             )
